@@ -6,7 +6,7 @@ import {
 } from "../config.js";
 import { extractResponseText, toMessage } from "./helpers.js";
 
-const MODEL = resolveModelForProvider("gpt-5.2");
+const MODEL = resolveModelForProvider("openrouter/free");
 
 async function chat(input, history = []) {
   const response = await fetch(RESPONSES_API_ENDPOINT, {

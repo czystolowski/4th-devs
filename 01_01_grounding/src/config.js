@@ -19,9 +19,9 @@ export const paths = {
 };
 
 export const models = {
-  extract: resolveModelForProvider("gpt-5.4"),
-  search: resolveModelForProvider("gpt-5.4"),
-  ground: resolveModelForProvider("gpt-5.4")
+  extract: resolveModelForProvider("openrouter/free"),
+  search: resolveModelForProvider("openrouter/free"),
+  ground: resolveModelForProvider("openrouter/free")
 };
 
 export const api = {

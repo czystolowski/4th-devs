@@ -1,0 +1,11 @@
+# Output files
+output.json
+
+# Node modules (if any dependencies are added)
+node_modules/
+
+# Environment files
+.env
+
+# OS files
+.DS_Store

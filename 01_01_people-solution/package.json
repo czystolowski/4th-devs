@@ -1,0 +1,13 @@
+{
+  "name": "01_01_people-solution",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "CSV people data processor with filtering and structured outputs",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "example": "node example.js",
+    "test": "node test-csv.js"
+  },
+  "license": "ISC"
+}
