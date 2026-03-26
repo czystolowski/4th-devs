@@ -7,9 +7,6 @@ export class PeopleDatabase {
     this.people = people;
   }
 
-  /**
-   * Get all people
-   */
   getAll() {
     return [...this.people];
   }

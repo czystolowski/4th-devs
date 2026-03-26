@@ -39,11 +39,6 @@ This solution combines concepts from:
 npm run example
 ```
 
-### Test CSV parsing
-```bash
-npm test
-```
-
 ### Process CSV from URL (requires API key)
 ```bash
 npm start -- --url https://example.com/people.csv
@@ -97,10 +92,12 @@ const result = db
 ```
 01_01_people-solution/
 ├── app.js              # Main application (CSV download & processing)
+├── app-v2.js           # Enhanced version with retry logic
+├── submit.js           # Direct submission script
+├── analyze.js          # Data analysis tool
 ├── example.js          # Example usage with sample data
 ├── test-csv.js         # CSV parsing tests
 ├── helpers.js          # Utility functions (CSV, encoding, dates)
-├── processor.js        # AI processing pipeline
 ├── schema.js           # JSON schemas for structured outputs
 ├── database.js         # PeopleDatabase class with filtering
 ├── sample-data.csv     # Sample CSV file for testing
@@ -123,10 +120,10 @@ Uses JSON schemas ([`schema.js`](schema.js)) to ensure consistent data format:
 - Enforces allowed specializations
 
 ### AI Processing Pipeline
-The [`processor.js`](processor.js) module:
-- Processes CSV rows into structured person objects
-- Optionally enriches data with AI-inferred specializations
-- Handles batch processing to avoid rate limits
+The main application files ([`app.js`](app.js), [`app-v2.js`](app-v2.js)):
+- Process CSV rows into structured person objects
+- Use AI to deduce specialization tags from job descriptions
+- Handle batch processing with retry logic to avoid rate limits
 
 ### Filtering & Querying
 The [`PeopleDatabase`](database.js) class provides:

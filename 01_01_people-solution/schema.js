@@ -13,6 +13,7 @@ export const ALLOWED_SPECIALIZATIONS = [
   "praca fizyczna"
 ];
 
+// not required after moving processing to the code
 export const personSchema = {
   type: "json_schema",
   name: "person",

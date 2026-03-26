@@ -1,122 +1,235 @@
 import { writeFile } from "node:fs/promises";
 import {
   AI_API_KEY,
+  AGENT_TOKEN,
   EXTRA_API_HEADERS,
   RESPONSES_API_ENDPOINT,
   resolveModelForProvider
 } from "../config.js";
-import { downloadCSV, parseCSV } from "./helpers.js";
-import { processPeopleBatch } from "./processor.js";
+import { downloadCSV, parseCSV, extractBirthYear, normalizeCity, extractResponseText } from "./helpers.js";
 import { PeopleDatabase } from "./database.js";
+import { specializationSchema, ALLOWED_SPECIALIZATIONS } from "./schema.js";
 
-// Default CSV URL (can be overridden via command line)
-const DEFAULT_CSV_URL = "https://example.com/people.csv";
+const PORTAL_URL = "https://hub.ag3nts.org";
+const CSV_URL = `${PORTAL_URL}/data/${AGENT_TOKEN}/people.csv`;
+const SUBMIT_URL = `${PORTAL_URL}/verify`;
+const MODEL = resolveModelForProvider("openai/gpt-4o-mini"); //deepseek/deepseek-v3.2
 
-// Parse command line arguments
-const args = process.argv.slice(2);
-const urlIndex = args.indexOf("--url");
-const CSV_URL = urlIndex !== -1 && args[urlIndex + 1] 
-  ? args[urlIndex + 1] 
-  : DEFAULT_CSV_URL;
-
-const enrichIndex = args.indexOf("--enrich");
-const ENRICH_SPECIALIZATIONS = enrichIndex !== -1;
+function processPersonRow({ name, surname, gender, birthDate, birthPlace, job }) {
+  const born = extractBirthYear(birthDate);
+  const city = normalizeCity(birthPlace);
+  
+  return {
+    name,
+    surname,
+    gender,
+    born,
+    city,
+    job,
+    tags: []
+  };
+}
 
 /**
- * Main application flow
- * Combines concepts from all three repositories:
- * - 01_01_interaction: Multi-turn conversations for enrichment
- * - 01_01_structured: Structured outputs with JSON schema
- * - 01_01_grounding: Pipeline processing with multiple steps
+ * Deduce tags from job description using AI
  */
+async function deduceTagsFromJob(person) {
+  if (!person.job) {
+    return person;
+  }
+
+  const prompt = `Jesteś ekspertem od kategoryzacji zawodów. Na podstawie opisu stanowiska pracy, przypisz odpowiednie specjalizacje z dozwolonej listy.
+
+Osoba: ${person.name} ${person.surname}
+Opis stanowiska: ${person.job}
+
+Dozwolone specjalizacje (wybierz 1-3 najbardziej trafne):
+- "IT" → technologia, programowanie, systemy informatyczne, inżynieria oprogramowania
+- "transport" → logistyka, przewóz towarów/osób, spedycja, magazynowanie
+- "edukacja" → nauczanie, szkolenia, wychowanie, dydaktyka
+- "medycyna" → ochrona zdrowia, leczenie, diagnostyka, farmacja, nauki medyczne i biologiczne
+- "praca z ludźmi" → obsługa klienta, HR, doradztwo, opieka, sprzedaż bezpośrednia
+- "praca z pojazdami" → prowadzenie, naprawa lub obsługa pojazdów mechanicznych
+- "praca fizyczna" → praca manualna, budowlana, produkcyjna, terenowa
+
+Zwróć tylko specjalizacje, które jednoznacznie wynikają z opisu. W razie wątpliwości wybierz mniej kategorii.`;
+
+  try {
+    const response = await fetch(RESPONSES_API_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${AI_API_KEY}`,
+        ...EXTRA_API_HEADERS
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        input: prompt,
+        text: { format: specializationSchema }
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      console.error(`   Error for ${person.name} ${person.surname}: ${data?.error?.code} - ${data?.error?.message || 'Unknown error'}`);
+      return person;
+    }
+
+    const outputText = extractResponseText(data);
+    if (!outputText) {
+      console.warn(`   Improper response for ${person.name} ${person.surname} - ${person.job}`);
+      return person;
+    }
+
+    const result = JSON.parse(outputText);
+
+    return {
+      ...person,
+      tags: result.tags
+    };
+  } catch (error) {
+    console.error(`   Error processing ${person.name} ${person.surname}: ${error.message}`);
+    return person;
+  }
+}
+
+/**
+ * Process people in batches with AI tag deduction
+ */
+async function processPeopleWithTags(people, batchSize = 10) {
+  const results = [];
+  const total = people.length;
+  
+  console.log(`   Processing ${total} people in batches of ${batchSize}...`);
+  
+  for (let i = 0; i < total; i += batchSize) {
+    const batch = people.slice(i, i + batchSize);
+    const batchNum = Math.floor(i / batchSize) + 1;
+    const totalBatches = Math.ceil(total / batchSize);
+    
+    console.log(`   Batch ${batchNum}/${totalBatches}`);
+    
+    const batchPromises = batch.map(person => deduceTagsFromJob(person));
+    const batchResults = await Promise.all(batchPromises);
+    
+    results.push(...batchResults);
+    
+    // Small delay to avoid rate limits
+    if (i + batchSize < total) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+  
+  return results;
+}
+
+async function submitAnswer(answer) {
+  const payload = {
+    apikey: AGENT_TOKEN,
+    task: "people",
+    answer: answer
+  };
+  
+  const response = await fetch(SUBMIT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const result = await response.json();
+  
+  if (!response.ok) {
+    console.error("   Response:", JSON.stringify(result, null, 2));
+    throw new Error(`Submission failed: ${response.status} ${response.statusText} - ${result.message || JSON.stringify(result)}`);
+  }
+
+  return result;
+}
+
+
 async function main() {
   console.log("🚀 People CSV Processor");
   console.log("=".repeat(50));
   
   try {
-    // Step 1: Download CSV
     console.log("\n📥 Step 1: Downloading CSV...");
-    console.log(`   URL: ${CSV_URL}`);
+    console.log(`URL: ${CSV_URL}`);
     const csvText = await downloadCSV(CSV_URL);
-    console.log(`   ✓ Downloaded (${csvText.length} bytes)`);
+    console.log(`✓ Downloaded (${csvText.length} bytes)`);
 
-    // Step 2: Parse CSV
     console.log("\n📋 Step 2: Parsing CSV...");
     const csvData = parseCSV(csvText);
-    console.log(`   ✓ Parsed ${csvData.length} rows`);
+    console.log(`✓ Parsed ${csvData.length} rows`);
     
     if (csvData.length === 0) {
       console.log("\n⚠️  No data to process");
       return;
     }
 
-    // Show sample row
-    console.log("\n   Sample row:");
-    console.log(`   ${JSON.stringify(csvData[0], null, 2)}`);
+    console.log("\n🔄 Step 3: Processing data...");
+    const allPeople = csvData.map(processPersonRow).filter(p => p.born !== null);
+    console.log(`   ✓ Processed ${allPeople.length}/${csvData.length} people`);
 
-    // Step 3: Process people with AI
-    console.log("\n🤖 Step 3: Processing with AI...");
-    if (ENRICH_SPECIALIZATIONS) {
-      console.log("   (with specialization enrichment)");
-    }
+    console.log("\n🔍 Step 4: Filtering...");
+    const db = new PeopleDatabase(allPeople);
+    const currentYear = new Date().getFullYear();
+    const minBirthYear = currentYear - 40;
+    const maxBirthYear = currentYear - 20;
     
-    const people = await processPeopleBatch(csvData, {
-      enrichSpecializations: ENRICH_SPECIALIZATIONS,
-      batchSize: 3 // Process 3 at a time to avoid rate limits
-    });
-
-    // Step 4: Create database and show results
-    console.log("\n💾 Step 4: Creating database...");
-    const db = new PeopleDatabase(people);
-    console.log(`   ✓ Database created with ${db.count()} people`);
-
-    // Step 5: Show statistics
-    console.log("\n📊 Step 5: Statistics");
-    const stats = db.getStats();
-    console.log(`   Total people: ${stats.total}`);
-    console.log(`   Gender distribution: ${stats.byGender.M} male, ${stats.byGender.F} female`);
-    console.log(`   Age range: ${stats.age.min}-${stats.age.max} (avg: ${stats.age.avg})`);
-    console.log(`   Unique cities: ${stats.cities}`);
-    console.log(`   Specializations: ${stats.specializations.join(', ') || 'none'}`);
-
-    // Step 6: Save results
-    console.log("\n💾 Step 6: Saving results...");
-    const outputPath = "01_01_people-solution/output.json";
-    await writeFile(outputPath, JSON.stringify(people, null, 2), "utf-8");
-    console.log(`   ✓ Saved to ${outputPath}`);
-
-    // Step 7: Show filtering examples
-    console.log("\n🔍 Step 7: Filtering examples");
-    
-    // Example: Filter by gender
-    const males = db.filterByGender('M');
-    console.log(`   Males: ${males.count()}`);
-    
-    // Example: Filter by age range
-    const adults = db.filterByAge(25, 40);
-    console.log(`   Age 25-40: ${adults.count()}`);
-    
-    // Example: Filter by specialization (if enriched)
-    if (ENRICH_SPECIALIZATIONS && stats.specializations.length > 0) {
-      const firstSpec = stats.specializations[0];
-      const specialized = db.filterBySpecialization(firstSpec);
-      console.log(`   With "${firstSpec}": ${specialized.count()}`);
-    }
-
-    // Example: Chain filters
     const filtered = db
       .filterByGender('M')
-      .filterByAge(30, 50);
-    console.log(`   Males aged 30-50: ${filtered.count()}`);
+      .filterByBirthYear(minBirthYear, maxBirthYear)
+      .filterByCity('Grudziądz');
+    
+    console.log(`   Males: ${db.filterByGender('M').count()}`);
+    console.log(`   In age 20-40: ${db.filterByGender('M').filterByBirthYear(minBirthYear, maxBirthYear).count()}`);
+    console.log(`   And from Grudziądz: ${filtered.count()}`);
 
-    // Show sample output
-    console.log("\n📄 Sample output (first 2 people):");
-    console.log(JSON.stringify(people.slice(0, 2), null, 2));
+    const filteredPeople = filtered.getAll();
+    
+    if (filteredPeople.length === 0) {
+      console.log("\n⚠️  No people match the criteria");
+      return;
+    }
+
+    console.log("\n🤖 Step 5: Deducing tags from job descriptions...");
+    const peopleWithTags = await processPeopleWithTags(filteredPeople);
+    console.log(`   ✓ Processed ${peopleWithTags.length} people`);
+
+    // Step 6: Filter by transport specialization
+    console.log("\n🚚 Step 6: Filtering by transport specialization...");
+    const transportPeople = peopleWithTags.filter(p => p.tags.includes('transport'));
+    console.log(`   ✓ Found ${transportPeople.length} people in transport`);
+
+    // Remove job field from final output
+    const finalAnswer = transportPeople.map(({ job, ...person }) => person);
+
+    // Step 7: Save results
+    console.log("\n💾 Step 7: Saving results...");
+    const outputPath = "output.json";
+    await writeFile(outputPath, JSON.stringify(finalAnswer, null, 2), "utf-8");
+    console.log(`   ✓ Saved to ${outputPath}`);
+
+    // Step 8: Show sample output
+    console.log("\n📄 Sample output (first 3 people):");
+    console.log(JSON.stringify(finalAnswer.slice(0, 3), null, 2));
+
+    // Step 9: Submit answer
+    console.log("\n📤 Step 9: Submitting answer...");
+    try {
+      const submissionResult = await submitAnswer(finalAnswer);
+      console.log("   ✓ Submission successful!");
+      console.log("   Response:", JSON.stringify(submissionResult, null, 2));
+    } catch (submitError) {
+      console.error(`   ✗ Submission failed: ${submitError.message}`);
+      console.log("   Answer saved locally in output.json");
+    }
 
     console.log("\n✅ Done!");
-    console.log("\nUsage examples:");
-    console.log("  node app.js --url https://your-csv-url.com/data.csv");
-    console.log("  node app.js --url https://your-csv-url.com/data.csv --enrich");
+    console.log(`\nFinal result: ${finalAnswer.length} people`);
     
   } catch (error) {
     console.error(`\n❌ Error: ${error.message}`);
@@ -130,4 +243,4 @@ async function main() {
 // Run the application
 main();
 
-
+// Made with Bob

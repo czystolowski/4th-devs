@@ -1,7 +1,7 @@
 /**
  * Extract text response from API response data
  */
-export const extractResponseText = (data) => {
+export function extractResponseText(data) {
   if (typeof data?.output_text === "string" && data.output_text.trim()) {
     return data.output_text;
   }
@@ -49,6 +49,7 @@ export async function downloadCSV(url) {
 
 /**
  * Parse CSV text into array of objects
+ * Handles both comma-separated and tab-separated values
  */
 export function parseCSV(csvText) {
   const lines = csvText.trim().split('\n');
@@ -57,23 +58,63 @@ export function parseCSV(csvText) {
     throw new Error('CSV must have at least a header row and one data row');
   }
 
+  // Detect delimiter (comma or tab)
+  const firstLine = lines[0];
+  const delimiter = firstLine.includes('\t') ? '\t' : ',';
+  
   // Parse header
-  const headers = lines[0].split('\t').map(h => h.trim());
+  const headers = parseCSVLine(firstLine, delimiter);
   
   // Parse data rows
   const data = [];
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split('\t');
+    const values = parseCSVLine(lines[i], delimiter);
     const row = {};
     
     headers.forEach((header, index) => {
-      row[header] = values[index]?.trim() || '';
+      row[header] = values[index] || '';
     });
     
     data.push(row);
   }
 
   return data;
+}
+
+/**
+ * Parse a single CSV line, handling quoted values
+ */
+function parseCSVLine(line, delimiter = ',') {
+  const values = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+    
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote
+        current += '"';
+        i++; // Skip next quote
+      } else {
+        // Toggle quote state
+        inQuotes = !inQuotes;
+      }
+    } else if (char === delimiter && !inQuotes) {
+      // End of field
+      values.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  // Add last field
+  values.push(current.trim());
+  
+  return values;
 }
 
 /**

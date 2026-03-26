@@ -6,8 +6,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "example": "node example.js",
-    "test": "node test-csv.js"
+    "example": "node example.js"
   },
   "license": "ISC"
 }
