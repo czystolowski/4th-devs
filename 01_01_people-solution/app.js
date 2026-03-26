@@ -6,29 +6,14 @@ import {
   RESPONSES_API_ENDPOINT,
   resolveModelForProvider
 } from "../config.js";
-import { downloadCSV, parseCSV, extractBirthYear, normalizeCity, extractResponseText } from "./helpers.js";
+import { downloadCSV, parseCSV, extractResponseText, processPersonRow } from "./helpers.js";
 import { PeopleDatabase } from "./database.js";
-import { specializationSchema, ALLOWED_SPECIALIZATIONS } from "./schema.js";
+import { specializationSchema } from "./schema.js";
+import { submitAnswer } from "./submit.js";
 
 const PORTAL_URL = "https://hub.ag3nts.org";
 const CSV_URL = `${PORTAL_URL}/data/${AGENT_TOKEN}/people.csv`;
-const SUBMIT_URL = `${PORTAL_URL}/verify`;
-const MODEL = resolveModelForProvider("openai/gpt-4o-mini"); //deepseek/deepseek-v3.2
-
-function processPersonRow({ name, surname, gender, birthDate, birthPlace, job }) {
-  const born = extractBirthYear(birthDate);
-  const city = normalizeCity(birthPlace);
-  
-  return {
-    name,
-    surname,
-    gender,
-    born,
-    city,
-    job,
-    tags: []
-  };
-}
+const MODEL = resolveModelForProvider("openai/gpt-4o-mini");
 
 /**
  * Deduce tags from job description using AI
@@ -97,7 +82,7 @@ Zwróć tylko specjalizacje, które jednoznacznie wynikają z opisu. W razie wą
 /**
  * Process people in batches with AI tag deduction
  */
-async function processPeopleWithTags(people, batchSize = 10) {
+async function processPeopleWithTags(people, batchSize = 11) {
   const results = [];
   const total = people.length;
   
@@ -124,32 +109,6 @@ async function processPeopleWithTags(people, batchSize = 10) {
   return results;
 }
 
-async function submitAnswer(answer) {
-  const payload = {
-    apikey: AGENT_TOKEN,
-    task: "people",
-    answer: answer
-  };
-  
-  const response = await fetch(SUBMIT_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-
-  const result = await response.json();
-  
-  if (!response.ok) {
-    console.error("   Response:", JSON.stringify(result, null, 2));
-    throw new Error(`Submission failed: ${response.status} ${response.statusText} - ${result.message || JSON.stringify(result)}`);
-  }
-
-  return result;
-}
-
-
 async function main() {
   console.log("🚀 People CSV Processor");
   console.log("=".repeat(50));
@@ -175,17 +134,14 @@ async function main() {
 
     console.log("\n🔍 Step 4: Filtering...");
     const db = new PeopleDatabase(allPeople);
-    const currentYear = new Date().getFullYear();
-    const minBirthYear = currentYear - 40;
-    const maxBirthYear = currentYear - 20;
     
     const filtered = db
       .filterByGender('M')
-      .filterByBirthYear(minBirthYear, maxBirthYear)
+      .filterByAge(20,40)
       .filterByCity('Grudziądz');
     
     console.log(`   Males: ${db.filterByGender('M').count()}`);
-    console.log(`   In age 20-40: ${db.filterByGender('M').filterByBirthYear(minBirthYear, maxBirthYear).count()}`);
+    console.log(`   In age 20-40: ${db.filterByGender('M').filterByAge(20,40).count()}`);
     console.log(`   And from Grudziądz: ${filtered.count()}`);
 
     const filteredPeople = filtered.getAll();

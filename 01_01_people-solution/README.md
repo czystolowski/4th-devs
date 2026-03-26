@@ -1,52 +1,65 @@
 # 01_01_people-solution
 
-CSV people data processor with filtering and structured outputs using AI.
+CSV people data processor with AI-powered specialization tagging and advanced filtering capabilities.
+
+## Overview
+
+This solution processes CSV data containing people information, uses AI to deduce professional specializations from job descriptions, and provides powerful filtering capabilities. It combines concepts from three foundational repositories to create a complete data processing pipeline.
 
 ## Features
 
-- Downloads CSV files from URLs
-- Handles UTF-8 encoding and special characters
-- Uses AI to extract and structure person data
-- Supports filtering by:
-  - Gender (M/F)
-  - Age range
-  - Birth place/city
-  - Specializations (IT, transport, edukacja, medycyna, praca z ludźmi, praca z pojazdami, praca fizyczna)
-- Handles multiple specializations per person
-- Outputs structured JSON format
+- **CSV Processing**: Downloads and parses CSV files with UTF-8/ISO-8859-1 encoding support
+- **AI-Powered Tagging**: Uses AI to deduce specializations from job descriptions
+- **Advanced Filtering**: Filter by gender, age range, city, and specializations
+- **Batch Processing**: Handles large datasets with rate limiting and retry logic
+- **Structured Output**: Produces clean JSON format ready for API submission
 
 ## Concepts Used
 
 This solution combines concepts from:
 - **01_01_interaction**: Multi-turn AI conversations for data enrichment
-- **01_01_structured**: JSON schema for structured outputs
-- **01_01_grounding**: Pipeline processing and data extraction
+- **01_01_structured**: JSON schema validation for structured outputs
+- **01_01_grounding**: Pipeline processing and data extraction patterns
 
 ## Setup
 
-1. Ensure you have Node.js 24+ installed
-2. Create a `.env` file in the root directory (one level up) with your API key:
-   ```
-   OPENAI_API_KEY=sk-...
-   # or
-   OPENROUTER_API_KEY=sk-or-v1-...
-   ```
+1. Ensure Node.js 24+ is installed
+2. Configure your API key in the root `config.js` file
+3. Set your `AGENT_TOKEN` in the root `config.js`
 
 ## Usage
 
-### Run the example (no API calls required)
+### Run the complete pipeline
 ```bash
-npm run example
+node app.js
 ```
 
-### Process CSV from URL (requires API key)
+This will:
+1. Download CSV from the configured URL
+2. Parse and structure the data
+3. Filter by criteria (males, age 20-40, from Grudziądz)
+4. Use AI to deduce specialization tags
+5. Filter by transport specialization
+6. Submit results to the verification endpoint
+
+### Submit existing results
 ```bash
-npm start -- --url https://example.com/people.csv
+node submit.js
 ```
 
-Or with specialization enrichment:
-```bash
-npm start -- --url https://example.com/people.csv --enrich
+Submits the `output.json` file to the verification endpoint.
+
+## Project Structure
+
+```
+01_01_people-solution/
+├── app.js          # Main application pipeline
+├── submit.js       # Submission utility (standalone or imported)
+├── helpers.js      # CSV parsing, encoding, date extraction
+├── database.js     # PeopleDatabase class with filtering
+├── schema.js       # JSON schemas for AI responses
+├── package.json    # Dependencies and scripts
+└── README.md       # Documentation
 ```
 
 ## Output Format
@@ -59,78 +72,69 @@ npm start -- --url https://example.com/people.csv --enrich
     "gender": "M",
     "born": 1987,
     "city": "Warszawa",
-    "tags": ["IT", "praca z ludźmi"]
+    "tags": ["transport", "praca z pojazdami"]
   }
 ]
 ```
 
-## Filtering Examples
+## Allowed Specializations
 
-The solution provides a `PeopleDatabase` class with filtering methods:
+- `IT` - Technology, programming, software engineering
+- `transport` - Logistics, freight, delivery, warehousing
+- `edukacja` - Teaching, training, education
+- `medycyna` - Healthcare, medicine, diagnostics, pharmacy
+- `praca z ludźmi` - Customer service, HR, consulting, sales
+- `praca z pojazdami` - Vehicle operation, repair, maintenance
+- `praca fizyczna` - Manual labor, construction, production
 
+## Key Components
+
+### CSV Processing ([`helpers.js`](helpers.js))
+- [`downloadCSV()`](helpers.js:27) - Downloads with encoding detection
+- [`parseCSV()`](helpers.js:48) - Parses comma-separated values with quoted fields
+- [`extractBirthYear()`](helpers.js:116) - Handles YYYY-MM-DD and M/D/YY formats
+- [`processPersonRow()`](helpers.js:141) - Converts CSV rows to structured objects
+
+### Filtering ([`database.js`](database.js))
+The [`PeopleDatabase`](database.js:4) class provides chainable filters:
 ```javascript
-// Filter by gender
-const males = db.filterByGender('M');
+const db = new PeopleDatabase(people);
 
-// Filter by age range
-const adults = db.filterByAge(25, 40);
-
-// Filter by city
-const fromWarsaw = db.filterByCity('Warszawa');
-
-// Filter by specialization
-const itPeople = db.filterBySpecialization('IT');
-
-// Chain filters
 const result = db
   .filterByGender('M')
-  .filterByAge(30, 50)
-  .filterBySpecialization('IT');
-
-## Project Structure
-
-```
-01_01_people-solution/
-├── app.js              # Main application (CSV download & processing)
-├── app-v2.js           # Enhanced version with retry logic
-├── submit.js           # Direct submission script
-├── analyze.js          # Data analysis tool
-├── example.js          # Example usage with sample data
-├── test-csv.js         # CSV parsing tests
-├── helpers.js          # Utility functions (CSV, encoding, dates)
-├── schema.js           # JSON schemas for structured outputs
-├── database.js         # PeopleDatabase class with filtering
-├── sample-data.csv     # Sample CSV file for testing
-├── package.json        # Project configuration
-└── README.md           # This file
+  .filterByAge(20, 40)
+  .filterByCity('Grudziądz')
+  .filterBySpecialization('transport');
 ```
 
-## Key Features Explained
+### AI Processing ([`app.js`](app.js))
+- [`deduceTagsFromJob()`](app.js:36) - Uses AI to extract specializations
+- [`processPeopleWithTags()`](app.js:100) - Batch processing with rate limiting
 
-### UTF-8 Encoding
-The [`downloadCSV()`](helpers.js:27) function handles encoding automatically:
-- Tries UTF-8 first
-- Falls back to ISO-8859-1 (Latin-1) for Polish characters
-- Normalizes special characters (≈, ö, etc.)
+### Submission ([`submit.js`](submit.js))
+- [`submitAnswer()`](submit.js:11) - Submits results to verification endpoint
+- Can be imported or run standalone
 
-### Structured Outputs
-Uses JSON schemas ([`schema.js`](schema.js)) to ensure consistent data format:
-- Validates gender (M/F)
-- Extracts birth year from various date formats
-- Enforces allowed specializations
+## Technical Details
 
-### AI Processing Pipeline
-The main application files ([`app.js`](app.js), [`app-v2.js`](app-v2.js)):
-- Process CSV rows into structured person objects
-- Use AI to deduce specialization tags from job descriptions
-- Handle batch processing with retry logic to avoid rate limits
+### Encoding Handling
+The solution handles Polish characters (ą, ć, ę, ł, ń, ó, ś, ź, ż) by:
+1. Attempting UTF-8 decoding first
+2. Falling back to ISO-8859-1 (Latin-1) if needed
+3. Normalizing special characters (≈, ö, etc.)
 
-### Filtering & Querying
-The [`PeopleDatabase`](database.js) class provides:
-- Gender filtering
-- Age range filtering
-- City filtering
-- Specialization filtering (single or multiple)
-- Search by name
-- Chainable filters
-- Statistics and aggregations
+### Date Parsing
+Supports multiple date formats:
+- `YYYY-MM-DD` (e.g., 1987-05-15)
+- `M/D/YY` (e.g., 7/7/75)
+- Handles 2-digit years with century inference
+
+### Batch Processing
+Processes people in batches of 11 with:
+- Parallel AI requests within each batch
+- 500ms delay between batches to avoid rate limits
+- Error handling for individual failures
+
+## License
+
+MIT

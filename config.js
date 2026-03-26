@@ -127,6 +127,7 @@ const resolveProvider = () => {
 
 export const AI_PROVIDER = resolveProvider();
 export const AI_API_KEY = AI_PROVIDER === "openai" ? OPENAI_API_KEY : OPENROUTER_API_KEY;
+export const AGENT_TOKEN = process.env.AGENT_TOKEN?.trim() ?? "";
 export const RESPONSES_API_ENDPOINT = RESPONSES_ENDPOINTS[AI_PROVIDER];
 export const EMBEDDINGS_API_ENDPOINT = EMBEDDINGS_ENDPOINTS[AI_PROVIDER];
 export const CHAT_API_BASE_URL = CHAT_API_BASE_URLS[AI_PROVIDER];

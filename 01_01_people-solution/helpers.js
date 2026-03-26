@@ -156,12 +156,20 @@ export function calculateAge(birthDateStr) {
 
 /**
  * Extract birth year from date string
+ * Handles both YYYY-MM-DD and M/D/YY formats
  */
 export function extractBirthYear(birthDateStr) {
+  if (!birthDateStr) return null;
+  
   const parts = birthDateStr.split(/[\/\-]/);
   
   if (parts.length === 3) {
-    if (parts[2].length === 2) {
+    // Check if first part is a 4-digit year (YYYY-MM-DD format)
+    if (parts[0].length === 4) {
+      return parseInt(parts[0]);
+    }
+    // Otherwise assume M/D/YY or D/M/YY format
+    else if (parts[2].length === 2) {
       const yy = parseInt(parts[2]);
       return yy >= 50 ? 1900 + yy : 2000 + yy;
     } else {
@@ -170,6 +178,24 @@ export function extractBirthYear(birthDateStr) {
   }
   
   return null;
+}
+
+/**
+ * Process a single person row from CSV into structured format
+ */
+export function processPersonRow({ name, surname, gender, birthDate, birthPlace, job }) {
+  const born = extractBirthYear(birthDate);
+  const city = normalizeCity(birthPlace);
+  
+  return {
+    name,
+    surname,
+    gender,
+    born,
+    city,
+    job,
+    tags: []
+  };
 }
 
 /**
