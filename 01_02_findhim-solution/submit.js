@@ -15,7 +15,12 @@ export async function submitAnswer(answer, apiKey) {
   };
   
   console.log("\n📤 Submitting answer:");
-  console.log(JSON.stringify(payload, null, 2));
+  // Mask the API key in logs
+  const maskedPayload = {
+    ...payload,
+    apikey: apiKey ? `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}` : 'undefined'
+  };
+  console.log(JSON.stringify(maskedPayload, null, 2));
   
   const response = await fetch(SUBMIT_URL, {
     method: "POST",

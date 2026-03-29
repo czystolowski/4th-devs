@@ -56,7 +56,6 @@ async function processSuspect(suspect, powerPlants) {
     }
     
     console.log(`     Found ${locations.length} location(s)`);
-    console.log(`     Sample location:`, JSON.stringify(locations[0], null, 2));
 
     const { closestPlant, minDistance } = findClosestPowerPlant(locations, powerPlants);
     
@@ -97,8 +96,11 @@ async function main() {
     console.log("\n🏭 Step 2: Fetching power plant locations...");
     const powerPlantsData = await fetchPowerPlants(AGENT_TOKEN);
     
+    // Extract the actual power plants data (might be nested under a key)
+    const plantsObject = powerPlantsData.power_plants || powerPlantsData;
+    
     // Convert nested object to array with city names
-    const powerPlants = Object.entries(powerPlantsData).map(([city, data]) => ({
+    const powerPlants = Object.entries(plantsObject).map(([city, data]) => ({
       name: city,
       ...data
     }));
