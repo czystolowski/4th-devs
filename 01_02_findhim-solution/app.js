@@ -42,8 +42,6 @@ async function loadSuspects() {
  */
 async function processSuspect(suspect, powerPlants) {
   try {
-    console.log(`   Checking ${suspect.name} ${suspect.surname}...`);
-
     const locations = await fetchPersonLocations(
       AGENT_TOKEN,
       suspect.name,
@@ -51,20 +49,18 @@ async function processSuspect(suspect, powerPlants) {
     );
     
     if (!locations || locations.length === 0) {
-      console.log(`     No locations found`);
+      console.log(`   ${suspect.name} ${suspect.surname}: No locations found`);
       return null;
     }
-    
-    console.log(`     Found ${locations.length} location(s)`);
 
     const { closestPlant, minDistance } = findClosestPowerPlant(locations, powerPlants);
     
     if (!closestPlant) {
-      console.log(`     No power plant found nearby`);
+      console.log(`   ${suspect.name} ${suspect.surname}: No power plant found nearby`);
       return null;
     }
     
-    console.log(`     Closest to ${closestPlant.name} (${minDistance.toFixed(2)} km)`);
+    console.log(`   ${suspect.name} ${suspect.surname}: ${locations.length} location(s), closest to ${closestPlant.name} (${minDistance.toFixed(2)} km)`);
     
     return {
       ...suspect,
