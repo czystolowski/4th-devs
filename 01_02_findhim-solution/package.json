@@ -1,0 +1,14 @@
+{
+  "name": "01_02_findhim-solution",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Find suspect near power plant using location tracking and access level verification",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.0"
+  }
+}
