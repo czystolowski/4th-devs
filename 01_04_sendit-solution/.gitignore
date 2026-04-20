@@ -1,0 +1,4 @@
+node_modules/
+*.log
+declaration.txt
+analysis-report.json

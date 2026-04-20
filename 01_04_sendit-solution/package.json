@@ -1,0 +1,17 @@
+{
+  "name": "01_04_sendit-solution",
+  "version": "1.0.0",
+  "description": "SPK Declaration Submission Solution",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "agent": "node app-agent.js"
+  },
+  "keywords": ["spk", "declaration", "transport"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.0.0"
+  }
+}
