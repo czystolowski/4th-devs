@@ -39,47 +39,94 @@ function parseDocumentation(doc) {
 }
 
 /**
- * Execute action sequence based on API documentation
+ * Execute action sequence to activate route X-01
+ *
+ * Based on API documentation:
+ * 1. reconfigure - Enable reconfigure mode
+ * 2. setstatus - Set status to RTOPEN
+ * 3. save - Exit reconfigure mode and save
  */
 async function executeActionSequence(apikey, documentation) {
-  console.log("\n🚂 Executing action sequence...");
+  console.log("\n🚂 Executing action sequence for route X-01...");
   
-  // The API documentation will tell us what to do
-  // We need to follow it exactly
+  const ROUTE = "X-01";
+  let lastResponse = null;
   
-  // Common pattern: the documentation might specify:
-  // 1. Actions available
-  // 2. Required parameters
-  // 3. Sequence/order of operations
-  
-  // For now, let's try to understand the structure
-  // The actual implementation will depend on what the help action returns
-  
-  if (documentation.actions) {
-    console.log("\n📝 Available actions:");
-    for (const [actionName, actionInfo] of Object.entries(documentation.actions)) {
-      console.log(`   - ${actionName}: ${actionInfo.description || 'No description'}`);
-      if (actionInfo.parameters) {
-        console.log(`     Parameters:`, actionInfo.parameters);
-      }
+  try {
+    // Step 1: Enable reconfigure mode
+    console.log("\n1️⃣ Enabling reconfigure mode...");
+    const reconfigureResult = await callRailwayAPI(apikey, "reconfigure", { route: ROUTE });
+    console.log("   Response:", JSON.stringify(reconfigureResult, null, 2));
+    lastResponse = reconfigureResult;
+    
+    // Check for flag
+    let flag = extractFlag(reconfigureResult);
+    if (flag) {
+      console.log(`\n🎉 FLAG FOUND: ${flag}`);
+      return reconfigureResult;
     }
+    
+    // Step 2: Check current status (optional, for logging)
+    console.log("\n2️⃣ Checking current status...");
+    const statusResult = await callRailwayAPI(apikey, "getstatus", { route: ROUTE });
+    console.log("   Response:", JSON.stringify(statusResult, null, 2));
+    lastResponse = statusResult;
+    
+    // Check for flag
+    flag = extractFlag(statusResult);
+    if (flag) {
+      console.log(`\n🎉 FLAG FOUND: ${flag}`);
+      return statusResult;
+    }
+    
+    // Step 3: Set status to RTOPEN (activate the route)
+    console.log("\n3️⃣ Setting status to RTOPEN (activating route)...");
+    const setstatusResult = await callRailwayAPI(apikey, "setstatus", {
+      route: ROUTE,
+      value: "RTOPEN"
+    });
+    console.log("   Response:", JSON.stringify(setstatusResult, null, 2));
+    lastResponse = setstatusResult;
+    
+    // Check for flag
+    flag = extractFlag(setstatusResult);
+    if (flag) {
+      console.log(`\n🎉 FLAG FOUND: ${flag}`);
+      return setstatusResult;
+    }
+    
+    // Step 4: Save configuration (exit reconfigure mode)
+    console.log("\n4️⃣ Saving configuration...");
+    const saveResult = await callRailwayAPI(apikey, "save", { route: ROUTE });
+    console.log("   Response:", JSON.stringify(saveResult, null, 2));
+    lastResponse = saveResult;
+    
+    // Check for flag
+    flag = extractFlag(saveResult);
+    if (flag) {
+      console.log(`\n🎉 FLAG FOUND: ${flag}`);
+      return saveResult;
+    }
+    
+    // Step 5: Verify final status
+    console.log("\n5️⃣ Verifying final status...");
+    const finalStatusResult = await callRailwayAPI(apikey, "getstatus", { route: ROUTE });
+    console.log("   Response:", JSON.stringify(finalStatusResult, null, 2));
+    lastResponse = finalStatusResult;
+    
+    // Check for flag
+    flag = extractFlag(finalStatusResult);
+    if (flag) {
+      console.log(`\n🎉 FLAG FOUND: ${flag}`);
+      return finalStatusResult;
+    }
+    
+    return lastResponse;
+    
+  } catch (error) {
+    console.error(`\n❌ Error during sequence execution: ${error.message}`);
+    throw error;
   }
-  
-  // Check if there's a sequence specified
-  if (documentation.sequence) {
-    console.log("\n🔢 Action sequence:");
-    console.log(documentation.sequence);
-  }
-  
-  // Check if there's information about route X-01
-  if (documentation.route || documentation.routes) {
-    console.log("\n🛤️  Route information:");
-    console.log(documentation.route || documentation.routes);
-  }
-  
-  // Return the documentation for manual inspection
-  // The actual sequence will need to be implemented based on what we learn
-  return documentation;
 }
 
 async function main() {
