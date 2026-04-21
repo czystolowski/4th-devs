@@ -1,0 +1,21 @@
+{
+  "name": "01_05_railway-solution",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Railway route X-01 activation via self-documenting API with retry and rate limiting",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": [
+    "railway",
+    "api",
+    "retry",
+    "rate-limiting"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.0"
+  }
+}
