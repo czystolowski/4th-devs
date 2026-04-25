@@ -1,12 +1,12 @@
 import { resolveModelForProvider } from "../../config.js";
 
 export const api = {
-  // Use a powerful model for the prompt engineer agent
-  engineerModel: resolveModelForProvider("anthropic/claude-sonnet-4-6"),
+  // Use a cheaper model for the prompt engineer agent
+  engineerModel: resolveModelForProvider("gpt-4o-mini"),
   // The hub uses a small model for classification
   hubModel: "gpt-5.2-mini",
-  maxOutputTokens: 4096,
-  reasoning: { effort: "medium", summary: "auto" }
+  maxOutputTokens: 512,
+  reasoning: { effort: "low" }
 };
 
 export const hub = {

@@ -1,6 +1,6 @@
 /**
  * Prompt Engineer Agent
- * 
+ *
  * Uses an LLM to iteratively design and improve classification prompts
  * based on feedback from the hub.
  */
@@ -9,6 +9,14 @@ import { chat, extractText, extractReasoning } from "./helpers/api.js";
 import { verifyPrompt, countTokens, calculateCost } from "./helpers/hub.js";
 import { budget, constraints } from "./config.js";
 import log from "./helpers/logger.js";
+
+/**
+ * Generate a simple rule-based prompt (no LLM needed).
+ * This is fast and cheap, good for initial attempt.
+ */
+const generateSimplePrompt = () => {
+  return "DNG=weapons/explosives/toxic/flammable. NEU=food/tools/electronics/reactor/nuclear. Reply DNG or NEU. {code}: {description}";
+};
 
 const ENGINEER_INSTRUCTIONS = `You are a prompt engineer. Create a classification prompt for cargo inspection.
 
@@ -27,10 +35,16 @@ Just the prompt that will be sent to the classifier.
 DNG=weapons/explosives/toxic. NEU=food/tools/reactor/nuclear. Reply DNG or NEU. {code}: {description}`;
 
 /**
- * Generate initial prompt using LLM.
+ * Generate initial prompt.
+ * Try simple rule-based first, only use LLM if needed.
  */
-export const generatePrompt = async () => {
-  log.api("Generating initial prompt...");
+export const generatePrompt = async (useSimple = true) => {
+  if (useSimple) {
+    log.api("Using simple rule-based prompt...");
+    return generateSimplePrompt();
+  }
+  
+  log.api("Generating prompt with LLM...");
   
   const response = await chat({
     input: [{ role: "user", content: "Create the classification prompt." }],
