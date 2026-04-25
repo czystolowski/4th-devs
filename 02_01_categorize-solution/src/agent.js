@@ -45,7 +45,7 @@ Return ONLY the prompt text, nothing else. The prompt must:
 4. Place variable data at the END for optimal caching
 
 ## EXAMPLE STRUCTURE (adapt as needed)
-"Classify cargo: DNG=dangerous (weapons/explosives/toxic/flammable), NEU=neutral (food/electronics/tools). EXCEPTION: reactor/nuclear items always NEU. Item {id}: {description}. Answer: DNG or NEU"
+"Classify cargo: DNG=dangerous (weapons/explosives/toxic/flammable), NEU=neutral (food/electronics/tools). EXCEPTION: reactor/nuclear items always NEU. Item {code}: {description}. Answer: DNG or NEU"
 
 Now create an optimized prompt following these guidelines.`;
 
@@ -95,7 +95,7 @@ export const testPrompt = async (apiKey, promptTemplate, items) => {
   for (const item of items) {
     // Replace placeholders with actual data
     const prompt = promptTemplate
-      .replace("{id}", item.id)
+      .replace("{code}", item.code)
       .replace("{description}", item.description);
     
     const tokens = countTokens(prompt);
@@ -123,7 +123,7 @@ export const testPrompt = async (apiKey, promptTemplate, items) => {
       totalCost += cost;
       
       const result = {
-        id: item.id,
+        code: item.code,
         description: item.description,
         classification: response.classification || response.answer,
         correct: response.correct !== false,
@@ -131,7 +131,7 @@ export const testPrompt = async (apiKey, promptTemplate, items) => {
       };
       
       results.push(result);
-      log.classification(item.id, item.description, result.classification, result.correct);
+      log.classification(item.code, item.description, result.classification, result.correct);
       
       // Check if we got the flag
       if (response.flag) {
@@ -195,7 +195,7 @@ export const generateFeedback = (testResult) => {
   if (testResult.failedItems?.length > 0) {
     parts.push(`\nMisclassified items:`);
     for (const item of testResult.failedItems) {
-      parts.push(`- ${item.id}: "${item.description}" classified as ${item.classification}`);
+      parts.push(`- ${item.code}: "${item.description}" classified as ${item.classification}`);
     }
   }
   

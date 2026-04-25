@@ -1,6 +1,6 @@
 /**
  * Categorize Solution - Agentic Prompt Optimization
- * 
+ *
  * This agent iteratively designs and tests classification prompts
  * to solve the cargo categorization challenge within strict constraints:
  * - 100 token prompt limit
@@ -16,9 +16,9 @@ import log from "./src/helpers/logger.js";
 const MAX_ATTEMPTS = 10;
 
 const getApiKey = () => {
-  const key = process.env.AIDEVS_API_KEY;
+  const key = process.env.AGENT_TOKEN;
   if (!key) {
-    throw new Error("AIDEVS_API_KEY not found in environment");
+    throw new Error("AGENT_TOKEN not found in environment");
   }
   return key;
 };
@@ -37,7 +37,7 @@ const main = async () => {
     // Display items
     console.log("\nItems to classify:");
     for (const item of items) {
-      console.log(`  ${item.id}: ${item.description}`);
+      console.log(`  ${item.code}: ${item.description}`);
     }
     console.log("");
     
