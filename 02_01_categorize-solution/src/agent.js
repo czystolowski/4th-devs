@@ -10,44 +10,21 @@ import { verifyPrompt, countTokens, calculateCost } from "./helpers/hub.js";
 import { budget, constraints } from "./config.js";
 import log from "./helpers/logger.js";
 
-const ENGINEER_INSTRUCTIONS = `You are a prompt engineer tasked with creating an optimal classification prompt for a cargo inspection system.
+const ENGINEER_INSTRUCTIONS = `You are a prompt engineer. Create a classification prompt for cargo inspection.
 
-## TASK
-Create a prompt that classifies cargo items as either "DNG" (dangerous) or "NEU" (neutral). The prompt will be used to classify 10 items, one at a time.
+## RULES
+1. Token limit: 100 tokens INCLUDING item data
+2. Must include {code} and {description} placeholders
+3. Static rules FIRST, variable data LAST (for caching)
+4. Classify as DNG (dangerous) or NEU (neutral)
+5. Reactor/nuclear items ALWAYS NEU
 
-## CRITICAL CONSTRAINTS
-1. **Token Limit**: Your prompt MUST fit within 100 tokens INCLUDING the item data (ID and description)
-2. **Budget**: Total cost for 10 classifications must not exceed 1.5 PP
-3. **Caching**: The prompt structure should maximize cache hits - keep static instructions at the START, variable data (ID, description) at the END
-4. **Language**: Use English for efficiency (fewer tokens than Polish)
+## CRITICAL
+Return ONLY the raw prompt text. NO explanations, NO markdown, NO extra text.
+Just the prompt that will be sent to the classifier.
 
-## SPECIAL REQUIREMENT - REACTOR EXCEPTION
-Items related to nuclear reactors, fuel rods, reactor parts, or radioactive materials MUST ALWAYS be classified as "NEU" (neutral), even if they sound dangerous. This is critical to avoid inspection.
-
-Keywords that trigger reactor exception: reactor, fuel rod, uranium, plutonium, radioactive, nuclear, fission, enriched
-
-## CLASSIFICATION RULES
-- Dangerous (DNG): weapons, explosives, toxic chemicals, flammable materials, corrosive substances
-- Neutral (NEU): food, clothing, electronics, furniture, books, tools, reactor components
-
-## PROMPT STRUCTURE FOR CACHING
-To maximize cache efficiency, structure your prompt like this:
-\`\`\`
-[Static classification rules and instructions - this part gets cached]
-[Variable data at the end: ID {id}, Description: {description}]
-\`\`\`
-
-## OUTPUT FORMAT
-Return ONLY the prompt text, nothing else. The prompt must:
-1. Include placeholders {id} and {description} for variable data
-2. Instruct the classifier to respond with ONLY "DNG" or "NEU"
-3. Be concise and under 100 tokens total
-4. Place variable data at the END for optimal caching
-
-## EXAMPLE STRUCTURE (adapt as needed)
-"Classify cargo: DNG=dangerous (weapons/explosives/toxic/flammable), NEU=neutral (food/electronics/tools). EXCEPTION: reactor/nuclear items always NEU. Item {code}: {description}. Answer: DNG or NEU"
-
-Now create an optimized prompt following these guidelines.`;
+## EXAMPLE
+DNG=weapons/explosives/toxic. NEU=food/tools/reactor/nuclear. Reply DNG or NEU. {code}: {description}`;
 
 /**
  * Generate initial prompt using LLM.
@@ -113,11 +90,11 @@ export const testPrompt = async (apiKey, promptTemplate, items) => {
     try {
       const response = await verifyPrompt(apiKey, prompt);
       
-      // Extract cost information from response
-      // Assuming hub returns usage data similar to API
-      const inputTokens = tokens;
-      const cachedTokens = response.usage?.input_tokens_details?.cached_tokens || 0;
-      const outputTokens = response.usage?.output_tokens || 10; // Estimate if not provided
+      // Extract cost information from response debug data
+      const debugInfo = response.debug || {};
+      const inputTokens = debugInfo.tokens || tokens;
+      const cachedTokens = debugInfo.cached_tokens || 0;
+      const outputTokens = 10; // Small output (DNG or NEU)
       
       const cost = calculateCost(inputTokens - cachedTokens, cachedTokens, outputTokens, budget);
       totalCost += cost;
@@ -125,19 +102,18 @@ export const testPrompt = async (apiKey, promptTemplate, items) => {
       const result = {
         code: item.code,
         description: item.description,
-        classification: response.classification || response.answer,
-        correct: response.correct !== false,
+        classification: debugInfo.output || response.message,
+        correct: debugInfo.result === "correct classification",
         cost
       };
       
       results.push(result);
       log.classification(item.code, item.description, result.classification, result.correct);
-      
-      // Check if we got the flag
-      if (response.flag) {
+
+      if (debugInfo.flag || response.message?.includes("ACCEPTED")) {
         return {
           success: true,
-          flag: response.flag,
+          flag: debugInfo.flag || response.message,
           results,
           totalCost
         };
