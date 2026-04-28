@@ -1,0 +1,5 @@
+# Ignore all session directories
+session-*/
+
+# But keep this directory
+!.gitignore
