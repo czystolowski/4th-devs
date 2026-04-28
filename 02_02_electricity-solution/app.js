@@ -9,7 +9,7 @@
  * 5. Tracking all states in workspace/session-{timestamp}/
  */
 
-import { fetchGridImage, fetchSolutionImage, imageToDataUrl } from "./src/helpers/hub.js";
+import { fetchGridImage, fetchSolutionImage, imageToDataUrl, rotateCell } from "./src/helpers/hub.js";
 import { loadTargetGrid, analyzeAndPlan, executeRotations } from "./src/agent.js";
 import { createSession, saveSessionImage, createSessionManifest, addSessionStep } from "./src/helpers/session.js";
 import log from "./src/helpers/logger.js";
@@ -79,39 +79,47 @@ const main = async () => {
     
     // Step 3: Execute rotations
     log.start("Executing rotations...");
-    const result = await executeRotations(apiKey, rotationPlan, session);
+    let result = await executeRotations(apiKey, rotationPlan, session);
     
-    if (result.flag) {
-      log.flag(result.flag);
-      console.log("\n✓ Puzzle solved successfully!");
+    // Iterative solving loop - keep trying until grid matches or max attempts reached
+    const MAX_ITERATIONS = 10;
+    let iteration = 0;
+    let allRotations = [];
+    
+    while (iteration < MAX_ITERATIONS) {
+      if (result.flag) {
+        log.flag(result.flag);
+        console.log("\n✓ Puzzle solved successfully!");
+        
+        // Save final state
+        const finalImage = await fetchGridImage(apiKey);
+        const { filename: finalFile } = await saveSessionImage(session, finalImage, "final-solved");
+        log.info(`Saved: ${finalFile}`);
+        
+        addSessionStep(session, {
+          action: "solved",
+          flag: result.flag,
+          image: finalFile
+        });
+        
+        // Create manifest
+        const manifestPath = await createSessionManifest(session, {
+          steps: session.steps,
+          rotations: allRotations,
+          iterations: iteration + 1,
+          success: true,
+          flag: result.flag
+        });
+        log.info(`Manifest: ${manifestPath}`);
+        break;
+      }
       
-      // Save final state
-      const finalImage = await fetchGridImage(apiKey);
-      const { filename: finalFile } = await saveSessionImage(session, finalImage, "final-solved");
-      log.info(`Saved: ${finalFile}`);
-      
-      addSessionStep(session, {
-        action: "solved",
-        flag: result.flag,
-        image: finalFile
-      });
-      
-      // Create manifest
-      const manifestPath = await createSessionManifest(session, {
-        steps: session.steps,
-        rotations: Object.entries(rotationPlan).map(([pos, count]) => ({ position: pos, count })),
-        success: true,
-        flag: result.flag
-      });
-      log.info(`Manifest: ${manifestPath}`);
-      
-    } else {
-      log.success("All rotations completed");
-      log.info("Fetching updated grid to verify...");
+      log.success("Rotations completed");
+      log.info("Verifying grid state...");
       
       // Fetch and analyze again to verify
       const updatedImage = await fetchGridImage(apiKey);
-      const { filename: verifyFile } = await saveSessionImage(session, updatedImage, "verify-state");
+      const { filename: verifyFile } = await saveSessionImage(session, updatedImage, `verify-iteration-${iteration + 1}`);
       log.info(`Saved: ${verifyFile}`);
       
       const updatedDataUrl = imageToDataUrl(updatedImage);
@@ -119,29 +127,81 @@ const main = async () => {
       
       if (Object.keys(remainingRotations).length === 0) {
         log.success("Grid matches target configuration!");
+        log.info("Requesting flag from hub...");
         
-        // Create manifest
-        await createSessionManifest(session, {
-          steps: session.steps,
-          rotations: Object.entries(rotationPlan).map(([pos, count]) => ({ position: pos, count })),
-          success: true,
-          flag: null
-        });
-      } else {
-        log.warning("Grid still needs adjustments");
-        console.log("\nRemaining rotations needed:");
-        for (const [position, rotations] of Object.entries(remainingRotations)) {
-          console.log(`  ${position}: ${rotations} rotation(s)`);
+        // Try to get the flag by sending a verification request
+        // The hub should return the flag if the puzzle is correctly solved
+        try {
+          const verifyResponse = await rotateCell(apiKey, "1x1"); // Rotate any cell to trigger check
+          
+          if (verifyResponse.flag || verifyResponse.message?.includes("FLG:")) {
+            const flag = verifyResponse.flag || verifyResponse.message;
+            log.flag(flag);
+            
+            // Save final state with flag
+            const finalImage = await fetchGridImage(apiKey);
+            const { filename: finalFile } = await saveSessionImage(session, finalImage, "final-with-flag");
+            log.info(`Saved: ${finalFile}`);
+            
+            await createSessionManifest(session, {
+              steps: session.steps,
+              rotations: allRotations,
+              iterations: iteration + 1,
+              success: true,
+              flag: flag
+            });
+            break;
+          } else {
+            log.warning("No flag received from hub - puzzle may not be correctly solved");
+            await createSessionManifest(session, {
+              steps: session.steps,
+              rotations: allRotations,
+              iterations: iteration + 1,
+              success: false,
+              flag: null,
+              note: "Grid matches target but hub did not return flag"
+            });
+            break;
+          }
+        } catch (error) {
+          log.error("Flag verification failed", error.message);
+          await createSessionManifest(session, {
+            steps: session.steps,
+            rotations: allRotations,
+            iterations: iteration + 1,
+            success: false,
+            flag: null,
+            error: error.message
+          });
+          break;
         }
-        
-        // Create manifest with partial success
+      }
+      
+      // More rotations needed
+      iteration++;
+      log.warning(`Iteration ${iteration}: Grid needs ${Object.keys(remainingRotations).length} more rotation(s)`);
+      console.log("\nRemaining rotations:");
+      for (const [position, rotations] of Object.entries(remainingRotations)) {
+        console.log(`  ${position}: ${rotations} rotation(s)`);
+        allRotations.push({ position, count: rotations });
+      }
+      console.log("");
+      
+      if (iteration >= MAX_ITERATIONS) {
+        log.error("Max iterations reached", "Could not solve puzzle");
         await createSessionManifest(session, {
           steps: session.steps,
-          rotations: Object.entries(rotationPlan).map(([pos, count]) => ({ position: pos, count })),
+          rotations: allRotations,
+          iterations: iteration,
           success: false,
           remainingRotations: remainingRotations
         });
+        break;
       }
+      
+      // Execute remaining rotations
+      log.start(`Iteration ${iteration}: Executing remaining rotations...`);
+      result = await executeRotations(apiKey, remainingRotations, session);
     }
     
     console.log(`\n📁 Session saved to: ${session.dir}`);
