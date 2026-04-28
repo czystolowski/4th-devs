@@ -5,6 +5,7 @@
 import { analyzeGridImage, createAnalysisPrompt, parseGridAnalysis } from "./helpers/vision.js";
 import { rotateCell, fetchGridImage, imageToDataUrl } from "./helpers/hub.js";
 import { saveSessionImage, addSessionStep } from "./helpers/session.js";
+import { askChoice, waitForEnter } from "./helpers/prompt.js";
 import log from "./helpers/logger.js";
 
 /**
@@ -134,7 +135,7 @@ export const analyzeAndPlan = async (imageDataUrl) => {
 /**
  * Execute rotation plan by sending commands to hub
  */
-export const executeRotations = async (apiKey, rotationPlan, session) => {
+export const executeRotations = async (apiKey, rotationPlan, session, interactive = true) => {
   const positions = Object.keys(rotationPlan);
   
   if (positions.length === 0) {
@@ -142,46 +143,139 @@ export const executeRotations = async (apiKey, rotationPlan, session) => {
     return { success: true };
   }
   
-  log.info(`Need to rotate ${positions.length} cells`);
+  // Show rotation plan summary
+  console.log("\n" + "=".repeat(50));
+  console.log("ROTATION PLAN");
+  console.log("=".repeat(50));
+  console.log(`Total cells to rotate: ${positions.length}`);
+  console.log(`Total rotations: ${Object.values(rotationPlan).reduce((a, b) => a + b, 0)}`);
   console.log("");
   
-  for (const position of positions) {
-    const rotations = rotationPlan[position];
+  for (const [position, count] of Object.entries(rotationPlan)) {
+    console.log(`  ${position}: ${count} rotation(s) (${count * 90}° clockwise)`);
+  }
+  console.log("=".repeat(50) + "\n");
+  
+  if (interactive) {
+    const choice = await askChoice(
+      "What would you like to do?",
+      [
+        "Execute all rotations automatically",
+        "Execute rotations one-by-one with confirmation",
+        "Skip rotations (manual mode)",
+        "Re-analyze the grid"
+      ]
+    );
     
-    // Execute each rotation one at a time
-    for (let i = 0; i < rotations; i++) {
-      log.rotation(position, `${i + 1}/${rotations}`);
+    if (choice === 2) {
+      log.info("Skipping automatic rotations - manual mode");
+      return { success: true, skipped: true };
+    }
+    
+    if (choice === 3) {
+      log.info("Re-analysis requested");
+      return { success: true, reanalyze: true };
+    }
+    
+    const stepByStep = choice === 1;
+    
+    for (const position of positions) {
+      const rotations = rotationPlan[position];
       
-      const response = await rotateCell(apiKey, position);
-      
-      // Save grid state after rotation if session tracking is enabled
-      if (session) {
-        const gridImage = await fetchGridImage(apiKey);
-        const { filename } = await saveSessionImage(
-          session,
-          gridImage,
-          `rotate-${position}-${i + 1}`
-        );
+      // Execute each rotation one at a time
+      for (let i = 0; i < rotations; i++) {
+        if (stepByStep) {
+          console.log(`\n${"─".repeat(40)}`);
+          console.log(`Next rotation: ${position} (${i + 1}/${rotations})`);
+          console.log(`This will rotate cell ${position} by 90° clockwise`);
+          console.log(`${"─".repeat(40)}`);
+          
+          const proceed = await askChoice(
+            "Proceed with this rotation?",
+            ["Yes, execute", "Skip this rotation", "Stop all rotations"]
+          );
+          
+          if (proceed === 1) {
+            log.info(`Skipping rotation of ${position}`);
+            continue;
+          }
+          
+          if (proceed === 2) {
+            log.warning("Stopping rotation execution");
+            return { success: true, stopped: true };
+          }
+        }
         
-        addSessionStep(session, {
-          action: "rotate",
-          position,
-          rotation: i + 1,
-          totalRotations: rotations,
-          image: filename
-        });
+        log.rotation(position, `${i + 1}/${rotations}`);
         
-        log.info(`Saved: ${filename}`);
+        const response = await rotateCell(apiKey, position);
+        
+        // Save grid state after rotation if session tracking is enabled
+        if (session) {
+          const gridImage = await fetchGridImage(apiKey);
+          const { filename } = await saveSessionImage(
+            session,
+            gridImage,
+            `rotate-${position}-${i + 1}`
+          );
+          
+          addSessionStep(session, {
+            action: "rotate",
+            position,
+            rotation: i + 1,
+            totalRotations: rotations,
+            image: filename
+          });
+          
+          log.info(`Saved: ${filename}`);
+        }
+        
+        // Check if we got the flag
+        if (response.message?.includes("FLG:") || response.flag) {
+          const flag = response.flag || response.message;
+          return { success: true, flag };
+        }
+        
+        // Small delay to avoid overwhelming the API
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
+    }
+  } else {
+    // Non-interactive mode - execute all
+    for (const position of positions) {
+      const rotations = rotationPlan[position];
       
-      // Check if we got the flag
-      if (response.message?.includes("FLG:") || response.flag) {
-        const flag = response.flag || response.message;
-        return { success: true, flag };
+      for (let i = 0; i < rotations; i++) {
+        log.rotation(position, `${i + 1}/${rotations}`);
+        
+        const response = await rotateCell(apiKey, position);
+        
+        if (session) {
+          const gridImage = await fetchGridImage(apiKey);
+          const { filename } = await saveSessionImage(
+            session,
+            gridImage,
+            `rotate-${position}-${i + 1}`
+          );
+          
+          addSessionStep(session, {
+            action: "rotate",
+            position,
+            rotation: i + 1,
+            totalRotations: rotations,
+            image: filename
+          });
+          
+          log.info(`Saved: ${filename}`);
+        }
+        
+        if (response.message?.includes("FLG:") || response.flag) {
+          const flag = response.flag || response.message;
+          return { success: true, flag };
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-      
-      // Small delay to avoid overwhelming the API
-      await new Promise(resolve => setTimeout(resolve, 100));
     }
   }
   

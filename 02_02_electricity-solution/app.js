@@ -5,7 +5,7 @@
  * 1. Fetching the current grid image from hub
  * 2. Using vision AI to analyze cable configurations
  * 3. Calculating rotations needed to match target state
- * 4. Executing rotations via hub API
+ * 4. Executing rotations via hub API (with interactive confirmation)
  * 5. Tracking all states in workspace/session-{timestamp}/
  */
 
@@ -23,7 +23,7 @@ const getApiKey = () => {
 };
 
 const main = async () => {
-  log.box("Electricity Puzzle Solution\nAI-Powered Grid Solver");
+  log.box("Electricity Puzzle Solution\nAI-Powered Grid Solver\nInteractive Mode");
   
   const apiKey = getApiKey();
   
@@ -77,9 +77,9 @@ const main = async () => {
       console.log("");
     }
     
-    // Step 3: Execute rotations
+    // Step 3: Execute rotations (interactive mode)
     log.start("Executing rotations...");
-    let result = await executeRotations(apiKey, rotationPlan, session);
+    let result = await executeRotations(apiKey, rotationPlan, session, true);
     
     // Iterative solving loop - keep trying until grid matches or max attempts reached
     const MAX_ITERATIONS = 10;
@@ -130,9 +130,8 @@ const main = async () => {
         log.info("Requesting flag from hub...");
         
         // Try to get the flag by sending a verification request
-        // The hub should return the flag if the puzzle is correctly solved
         try {
-          const verifyResponse = await rotateCell(apiKey, "1x1"); // Rotate any cell to trigger check
+          const verifyResponse = await rotateCell(apiKey, "1x1");
           
           if (verifyResponse.flag || verifyResponse.message?.includes("FLG:")) {
             const flag = verifyResponse.flag || verifyResponse.message;
@@ -201,7 +200,35 @@ const main = async () => {
       
       // Execute remaining rotations
       log.start(`Iteration ${iteration}: Executing remaining rotations...`);
-      result = await executeRotations(apiKey, remainingRotations, session);
+      result = await executeRotations(apiKey, remainingRotations, session, true);
+      
+      // Handle special cases
+      if (result.reanalyze) {
+        log.info("Re-analyzing grid...");
+        const currentImage = await fetchGridImage(apiKey);
+        const currentDataUrl = imageToDataUrl(currentImage);
+        const { rotationPlan: newPlan } = await analyzeAndPlan(currentDataUrl);
+        
+        if (Object.keys(newPlan).length > 0) {
+          log.info("New rotation plan generated");
+          result = await executeRotations(apiKey, newPlan, session, true);
+        } else {
+          log.success("Re-analysis shows grid matches target");
+          break;
+        }
+      }
+      
+      if (result.skipped || result.stopped) {
+        log.warning("Rotation execution interrupted by user");
+        await createSessionManifest(session, {
+          steps: session.steps,
+          rotations: allRotations,
+          iterations: iteration + 1,
+          success: false,
+          note: result.skipped ? "User skipped rotations" : "User stopped execution"
+        });
+        break;
+      }
     }
     
     console.log(`\n📁 Session saved to: ${session.dir}`);
@@ -218,3 +245,4 @@ main().catch((err) => {
   process.exit(1);
 });
 
+// Made with Bob

@@ -9,7 +9,7 @@ export const hub = {
 
 export const api = {
   // Use GPT-4o for vision - it's good at analyzing images
-  visionModel: "gpt-4o",
+  visionModel: "google/gemini-3-flash-preview",
   maxOutputTokens: 2000
 };
 
