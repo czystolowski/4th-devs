@@ -1,3 +1,6 @@
+# WIP
+The logic is implemented, but with a few attempts it didn't achieve the goal due to vision mistakes. It might work with just a better model on board, but on the other hand might take additional adjustments.
+
 # Electricity Puzzle Solution
 
 AI-powered solver for the 3x3 electrical grid puzzle that uses vision models to analyze cable configurations and automatically calculate the rotations needed.
