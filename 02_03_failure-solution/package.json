@@ -1,0 +1,14 @@
+{
+  "name": "02_03_failure-solution",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Log compression challenge - filter and compress power plant failure logs",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "keywords": ["ai", "agents", "log-analysis", "compression"],
+  "author": "",
+  "license": "ISC"
+}
