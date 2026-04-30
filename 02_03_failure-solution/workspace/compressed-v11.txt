@@ -1,0 +1,43 @@
+2026-04-29 06:02:28 [WARN] STMTURB12: pressure jitter above baseline, damping engaged  
+2026-04-29 06:03:20 [WARN] ECCS8: thermal drift exceeds threshold, corrective ramp queued  
+2026-04-29 06:04:13 [CRIT] ECCS8: runaway temp, reactor trip  
+2026-04-29 06:04:39 [WARN] WTANK07: fill trajectory slow, cooling reserve may be constrained  
+2026-04-29 06:11:40 [WARN] PWR01: input ripple crossed limits, stability window narrowed  
+2026-04-29 06:16:56 [CRIT] WSTPOOL2: absorption path emergency boundary reached, insufficient heat rejection  
+2026-04-29 06:30:05 [WARN] ECCS8: rising return temp, cooling headroom decreasing  
+2026-04-29 06:30:58 [WARN] WSTPOOL2: waste heat relay approaching cap, tuning required  
+2026-04-29 06:35:21 [ERRO] PWR01: transient disturbed aux pump control, recovery degraded  
+2026-04-29 06:36:40 [ERRO] WTANK07: unstable refill trend, coolant inventory uncertain  
+2026-04-29 06:37:33 [ERRO] STMTURB12: feedback loop correction budget exceeded, thermal conversion rate reduced  
+2026-04-29 06:52:54 [WARN] WTANK07: level sensor minor mismatch, secondary read requested  
+2026-04-29 08:00:26 [CRIT] ECCS8: core cooling unsafe, immediate actions required  
+2026-04-29 08:06:34 [ERRO] WSTPOOL2: heat transfer path saturated, lag accumulating  
+2026-04-29 08:28:56 [ERRO] ECCS8: cooling efficiency below target, commands failed recovery  
+2026-04-29 08:36:50 [ERRO] WTANK07: level estimate near minimum, automatic refill timed out  
+2026-04-29 09:06:13 [ERRO] ECCS8: return circuit temp rose quickly, emergency bias armed  
+2026-04-29 10:15:56 [CRIT] WTANK07: coolant level below critical, shutdown logic triggering  
+2026-04-29 12:49:52 [WARN] WTANK07: advisory threshold crossed, control loop reduced tolerance  
+2026-04-29 12:56:27 [CRIT] STMTURB12: decoupling due to thermal risk, energy conversion terminated  
+2026-04-29 13:37:40 [CRIT] PWR01: unstable cooling feed, critical loads shedding  
+2026-04-29 13:48:12 [WARN] PWR01: power stability unstable under load, add power source recommended  
+2026-04-29 15:47:55 [WARN] WSTPOOL2: moderate drift during initialization, correction active  
+2026-04-29 16:06:47 [CRIT] WSTPOOL2: critical protection state, shutdown safeguards active  
+2026-04-29 17:17:23 [ERRO] PWR01: failed recovery step, subsystem degraded  
+2026-04-29 18:00:22 [WARN] WTANK07: trend outside startup envelope, monitoring increased  
+2026-04-29 18:06:04 [WARN] WTANK07: cooling reserve falling, ECCS8 nearing limit  
+2026-04-29 18:08:15 [ERRO] ECCS8: fails to recover thermal margin, shutdown criteria approaching  
+2026-04-29 18:27:33 [ERRO] ECCS8: operational fault persists, performance constraints enforced  
+2026-04-29 18:46:51 [WARN] ECCS8: moderate drift during initialization, correction active  
+2026-04-29 19:13:36 [WARN] WTANK07: preventive warning issued, escalation rules armed  
+2026-04-29 19:21:56 [ERRO] ECCS8: inconsistent feedback under load, fallback path applied  
+2026-04-29 19:46:56 [ERRO] WTANK07: coolant level below critical reserve, shutdown path enforced  
+2026-04-29 19:47:22 [ERRO] WTANK07: control response exceeded error budget, recovery limited  
+2026-04-29 19:54:49 [CRIT] ECCS8: cannot remove heat, reactor protection critical stop  
+2026-04-29 20:02:16 [ERRO] WTANK07: failed recovery step, subsystem degraded  
+2026-04-29 20:05:21 [CRIT] ECCS8: critical boundary exceeded, reactor in protected mode  
+2026-04-29 20:14:33 [ERRO] WTANK07: operational fault persists, performance constraints enforced  
+2026-04-29 20:32:06 [CRIT] WTANK07: coolant below critical for operation, shutdown mandatory  
+2026-04-29 20:34:44 [ERRO] WTANK07: inconsistent feedback under load, fallback path applied  
+2026-04-29 20:59:17 [CRIT] WTANK07: insufficient cooling capacity, final shutdown sequence executing  
+2026-04-29 21:11:34 [ERRO] ECCS8: failed recovery step, subsystem degraded  
+2026-04-29 21:37:00 [CRIT] WTANK07: final trip complete, FIRMWARE confirms shutdown state

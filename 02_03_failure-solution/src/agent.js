@@ -40,44 +40,134 @@ export const identifyComponents = (logText) => {
  * Extract structured log entry information
  */
 const parseLogEntry = (line) => {
-  // Expected format: timestamp [LEVEL] component_id: message
-  const match = line.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?)\s+\[(\w+)\]\s+(\w+):\s*(.+)$/);
+  // Handle both formats: [timestamp] [LEVEL] or timestamp [LEVEL]
+  const match = line.match(/\[?(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\]?\s+\[(\w+)\]\s+(.+)/);
   
   if (!match) return null;
+  
+  const messageText = match[3];
+  
+  // Extract component from message - try with number first, then without
+  let component = null;
+  let componentId = null;
+  
+  // Try pattern with number (e.g., "ECCS8", "STMTURB12")
+  const componentWithNum = messageText.match(/\b([A-Z]{3,})(\d+)\b/);
+  if (componentWithNum) {
+    component = componentWithNum[1];
+    componentId = componentWithNum[0];
+  } else {
+    // Try pattern without number for components like "WTRPMP", "FIRMWARE"
+    for (const comp of powerPlantComponents) {
+      if (messageText.includes(comp)) {
+        component = comp;
+        componentId = comp;
+        break;
+      }
+    }
+  }
   
   return {
     timestamp: match[1],
     level: match[2],
-    component: match[3],
-    message: match[4]
+    component: component,
+    componentId: componentId,
+    message: messageText
   };
+};
+
+/**
+ * Pre-process logs to remove redundancy and normalize format
+ */
+const preprocessLogs = (logText) => {
+  const lines = logText.split("\n").filter(l => l.trim());
+  const processed = [];
+  const componentEntries = new Map(); // Track entries per component
+  
+  for (const line of lines) {
+    const entry = parseLogEntry(line);
+    if (!entry || !entry.component) continue;
+    
+    // Normalize timestamp format (remove brackets if present)
+    const timestamp = entry.timestamp.replace(/[\[\]]/g, '');
+    
+    // Reconstruct line in consistent format
+    const normalizedLine = `${timestamp} [${entry.level}] ${entry.message}`;
+    
+    // Group by component to ensure all components are represented
+    if (!componentEntries.has(entry.component)) {
+      componentEntries.set(entry.component, []);
+    }
+    componentEntries.get(entry.component).push({
+      line: normalizedLine,
+      level: entry.level,
+      timestamp: timestamp
+    });
+  }
+  
+  // For each component, keep diverse entries (different levels and time periods)
+  for (const [component, entries] of componentEntries) {
+    // Sort by timestamp
+    entries.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    
+    // Keep first ERRO/CRIT, and sample of WARN entries
+    const critical = entries.filter(e => e.level === 'CRIT' || e.level === 'ERRO');
+    const warnings = entries.filter(e => e.level === 'WARN');
+    
+    // Add all critical entries
+    critical.forEach(e => processed.push(e.line));
+    
+    // Add sample of warnings (first, middle, last to show progression)
+    if (warnings.length > 0) {
+      processed.push(warnings[0].line); // First warning
+      if (warnings.length > 2) {
+        processed.push(warnings[Math.floor(warnings.length / 2)].line); // Middle
+      }
+      if (warnings.length > 1) {
+        processed.push(warnings[warnings.length - 1].line); // Last warning
+      }
+    }
+  }
+  
+  // Sort by timestamp to maintain chronological order
+  processed.sort((a, b) => {
+    const timeA = a.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/)?.[1] || '';
+    const timeB = b.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/)?.[1] || '';
+    return timeA.localeCompare(timeB);
+  });
+  
+  return processed.join("\n");
 };
 
 /**
  * Compress logs using AI while preserving key information
  */
 export const compressLogs = async (logText, missingComponents = []) => {
-  const instructions = `You are a log compression expert. Your task is to compress power plant failure logs while preserving ALL critical information.
+  // Pre-process logs to remove redundancy
+  const preprocessed = preprocessLogs(logText);
+  
+  const instructions = `You are a log compression expert. Compress power plant failure logs to ABSOLUTE MINIMUM while preserving critical information.
 
-REQUIREMENTS:
-1. Keep ONLY entries related to power plant failure (WARN, ERRO, CRIT levels)
-2. Preserve: timestamp, log level, component ID, and core message
-3. Remove redundant information and verbose details
-4. Keep chronological order
-5. Ensure ALL power plant components are represented if they appear in logs
-${missingComponents.length > 0 ? `6. IMPORTANT: Make sure to include entries for these components: ${missingComponents.join(", ")}` : ""}
+ULTRA-AGGRESSIVE COMPRESSION RULES:
+1. Format: HH:MM [LVL] CMP: msg (remove date, use 3-letter level codes)
+2. Abbreviate everything: temperature→temp, pressure→pres, cooling→cool, emergency→emerg, reactor→react
+3. Remove articles (a, the), conjunctions, filler words
+4. Use symbols: →(to/into), ↑(increase/high), ↓(decrease/low), !(critical), ?(uncertain)
+5. Combine related events on same line if same component+time
+${missingComponents.length > 0 ? `6. MUST include: ${missingComponents.join(", ")}` : ""}
 
-Power plant components to watch for: ${powerPlantComponents.join(", ")}
+Components: ${powerPlantComponents.join(", ")}
 
-Format each line as: timestamp [LEVEL] component: brief_message
+Examples:
+"2024-01-15 10:23:45 [ERRO] ECCS8 reported runaway outlet temperature. Protection interlock initiated reactor trip."
+→ "10:23 [ERR] ECCS8: runaway temp→react trip"
 
-Example compression:
-Input: "2024-01-15T10:23:45.123Z [ERRO] ECCS: Emergency Core Cooling System pressure drop detected in primary loop, initiating backup cooling sequence"
-Output: "2024-01-15T10:23:45Z [ERRO] ECCS: pressure drop, backup cooling initiated"
+"2024-01-15 10:25:12 [CRIT] WTANK07 coolant level below critical threshold, shutdown moving to hard trip"
+→ "10:25 [CRT] WTANK07: coolant↓crit→hard trip"
 
-CRITICAL: Output ONLY the log lines, one per line. Do NOT wrap in markdown code blocks (no \`\`\`plaintext or \`\`\`). Do NOT add any formatting, explanations, or extra text. Just the raw log lines.`;
+Output ONLY compressed lines, no markdown, no explanations.`;
 
-  const input = `Compress these logs:\n\n${logText}`;
+  const input = `Compress:\n\n${preprocessed}`;
 
   const body = {
     model: resolveModelForProvider(api.model),
@@ -159,21 +249,38 @@ export const improveCompression = async (originalLogs, currentCompressed, feedba
     const missingLines = [];
     
     for (const component of missingComponents) {
-      // Find lines with this component
-      const componentLines = lines.filter(line => 
+      // Find lines with this component - get both ERRO and CRIT levels
+      const componentLines = lines.filter(line =>
         line.includes(component) && logLevels.critical.some(level => line.includes(`[${level}]`))
       );
       
       if (componentLines.length > 0) {
-        // Take first occurrence of each missing component
-        missingLines.push(componentLines[0]);
+        // Take multiple occurrences to ensure component story is told
+        // Get first CRIT or ERRO
+        const critical = componentLines.find(l => l.includes('[CRIT]') || l.includes('[ERRO]'));
+        if (critical) missingLines.push(critical);
+        
+        // Get a WARN if no critical found
+        if (!critical && componentLines.length > 0) {
+          missingLines.push(componentLines[0]);
+        }
       }
     }
     
     if (missingLines.length > 0) {
-      // Add missing lines to current compressed logs
+      // Add missing lines to current compressed logs and return WITHOUT re-compressing
+      // This preserves the missing component entries
       const combined = currentCompressed + "\n" + missingLines.join("\n");
-      return compressLogs(combined, []);
+      
+      // Sort by timestamp to maintain chronological order
+      const allLines = combined.split("\n").filter(l => l.trim());
+      allLines.sort((a, b) => {
+        const timeA = a.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/)?.[1] || '';
+        const timeB = b.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/)?.[1] || '';
+        return timeA.localeCompare(timeB);
+      });
+      
+      return allLines.join("\n");
     }
   }
   

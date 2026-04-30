@@ -1,0 +1,68 @@
+2026-04-29 06:02:28 [WARN] STMTURB12: pressure jitter above baseline, damping engaged  
+2026-04-29 06:03:20 [WARN] ECCS8: thermal drift above threshold, corrective ramp queued  
+2026-04-29 06:04:13 [CRIT] ECCS8: runaway temp, reactor trip  
+2026-04-29 06:04:39 [WARN] WTANK07: slow fill trajectory, cooling reserve may be constrained  
+2026-04-29 06:05:32 [ERRO] FIRMWARE: validation queue block fault, runtime in constrained mode  
+2026-04-29 06:05:58 [WARN] WTRPMP: flow margin below startup profile, monitoring continues  
+2026-04-29 06:11:40 [WARN] PWR01: input ripple crossed warning limits, stability window narrowed  
+2026-04-29 06:14:18 [WARN] FIRMWARE: watchdog acknowledged delayed poll, retry timer active  
+2026-04-29 06:16:56 [CRIT] WSTPOOL2: absorption path emergency boundary reached, heat rejection insufficient  
+2026-04-29 06:30:58 [WARN] WSTPOOL2: waste heat relay approaching soft cap, tuning needed  
+2026-04-29 06:35:21 [ERRO] PWR01: auxiliary pump control disturbed, recovery completed degraded  
+2026-04-29 06:36:40 [ERRO] WTANK07: unstable refill trend, coolant inventory uncertain  
+2026-04-29 06:37:33 [ERRO] STMTURB12: feedback loop exceeded correction budget, thermal rate reduced  
+2026-04-29 06:59:28 [ERRO] STMTURB12: feedback loop exceeded correction budget, thermal rate reduced  
+2026-04-29 07:24:28 [ERRO] WTRPMP: suction profile inconsistent, mechanical stress increasing  
+2026-04-29 07:50:20 [ERRO] STMTURB12: feedback loop exceeded correction budget, thermal rate reduced  
+2026-04-29 08:00:26 [CRIT] ECCS8: core cooling can't maintain safe gradient, protective actions required  
+2026-04-29 08:06:34 [ERRO] WSTPOOL2: heat transfer path saturated, lag accumulating  
+2026-04-29 08:28:56 [ERRO] ECCS8: cooling efficiency below target, commands did not recover state  
+2026-04-29 08:29:49 [ERRO] STMTURB12: feedback loop exceeded correction budget, thermal rate reduced  
+2026-04-29 08:36:50 [ERRO] WTANK07: level estimate near minimum reserve line, refill timed out  
+2026-04-29 08:53:03 [ERRO] PWR01: auxiliary pump control disturbed, recovery completed degraded  
+2026-04-29 08:58:19 [ERRO] WTRPMP: suction profile inconsistent, mechanical stress increasing  
+2026-04-29 09:06:13 [ERRO] ECCS8: return circuit temp rose quickly, emergency bias armed  
+2026-04-29 09:37:21 [ERRO] WTANK07: unstable refill trend, coolant inventory uncertain  
+2026-04-29 09:38:40 [ERRO] PWR01: auxiliary pump control disturbed, recovery completed degraded  
+2026-04-29 09:52:15 [ERRO] ECCS8: return circuit temp rose quickly, emergency bias armed  
+2026-04-29 09:56:39 [ERRO] ECCS8: cooling efficiency below target, commands did not recover state  
+2026-04-29 09:58:24 [ERRO] WTRPMP: cavitation signatures reported, pressure cannot be held  
+2026-04-29 10:01:28 [ERRO] WSTPOOL2: heat transfer path saturated, lag accumulating  
+2026-04-29 10:04:32 [ERRO] PWR01: auxiliary pump control disturbed, recovery completed degraded  
+2026-04-29 10:09:22 [ERRO] WTANK07: level estimate near minimum reserve line, refill timed out  
+2026-04-29 10:11:07 [ERRO] WTRPMP: suction profile inconsistent, mechanical stress increasing  
+2026-04-29 10:12:26 [ERRO] WTANK07: unstable refill trend, coolant inventory uncertain  
+2026-04-29 10:15:56 [CRIT] WTANK07: coolant level below critical, shutdown moving to hard trip  
+2026-04-29 10:35:40 [CRIT] WSTPOOL2: absorption path emergency boundary reached, heat rejection insufficient  
+2026-04-29 10:42:41 [ERRO] FIRMWARE: validation queue block fault, runtime in constrained mode  
+2026-04-29 10:45:19 [CRIT] WSTPOOL2: absorption path emergency boundary reached, heat rejection insufficient  
+2026-04-29 11:01:33 [CRIT] WTRPMP: lost stable prime, core loop continuity compromised  
+2026-04-29 11:07:41 [ERRO] FIRMWARE: validation queue block fault, runtime in constrained mode  
+2026-04-29 11:12:04 [ERRO] WTRPMP: suction profile inconsistent, mechanical stress increasing  
+2026-04-29 11:26:59 [ERRO] WTRPMP: cavitation signatures reported, pressure cannot be held  
+2026-04-29 11:27:25 [ERRO] PWR01: auxiliary pump control disturbed, recovery completed degraded  
+2026-04-29 11:33:07 [ERRO] PWR01: auxiliary pump control disturbed, recovery completed degraded  
+2026-04-29 11:36:12 [ERRO] STMTURB12: feedback loop exceeded correction budget, thermal rate reduced  
+2026-04-29 11:40:08 [CRIT] ECCS8: core cooling can't maintain safe gradient, protective actions required  
+2026-04-29 11:48:02 [ERRO] WSTPOOL2: heat transfer path saturated, lag accumulating  
+2026-04-29 11:50:40 [ERRO] PWR01: auxiliary pump control disturbed, recovery completed degraded  
+2026-04-29 11:51:32 [ERRO] WTANK07: unstable refill trend, coolant inventory uncertain  
+2026-04-29 11:54:10 [ERRO] ECCS8: cooling efficiency below target, commands did not recover state  
+2026-04-29 12:20:03 [ERRO] FIRMWARE: validation queue block fault, runtime in constrained mode  
+2026-04-29 12:24:00 [ERRO] WTANK07: level estimate near minimum reserve line, refill timed out  
+2026-04-29 12:35:24 [ERRO] FIRMWARE: validation queue block fault, runtime in constrained mode  
+2026-04-29 12:36:16 [ERRO] ECCS8: return circuit temp rose quickly, emergency bias armed  
+2026-04-29 12:38:54 [ERRO] WTRPMP: cavitation signatures reported, pressure cannot be held  
+2026-04-29 12:41:32 [ERRO] WTANK07: level estimate near minimum reserve line, refill timed out  
+2026-04-29 12:45:03 [ERRO] WSTPOOL2: heat transfer path saturated, lag accumulating  
+2026-04-29 12:47:14 [ERRO] WTRPMP: cavitation signatures reported, pressure cannot be held  
+2026-04-29 12:48:33 [ERRO] WTRPMP: suction profile inconsistent, mechanical stress increasing  
+2026-04-29 12:51:11 [CRIT] FIRMWARE: entered emergency branch, manual override locked  
+2026-04-29 12:52:30 [ERRO] ECCS8: return circuit temp rose quickly, emergency bias armed  
+2026-04-29 12:52:56 [ERRO] WTRPMP: cavitation signatures reported, pressure cannot be held  
+2026-04-29 12:54:15 [ERRO] WSTPOOL2: heat transfer path saturated, lag accumulating  
+2026-04-29 12:56:27 [CRIT] STMTURB12: decoupling sequence forced by thermal risk, energy terminated  
+2026-04-29 12:57:46 [CRIT] ECCS8: runaway temp, reactor trip  
+2026-04-29 13:01:16 [CRIT] ECCS8: runaway temp, reactor trip  
+2026-04-29 13:04:20 [ERRO] WTANK07: level estimate near minimum reserve line, refill timed out  
+2026-04

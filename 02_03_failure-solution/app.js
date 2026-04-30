@@ -82,14 +82,18 @@ const main = async () => {
     while (attempt <= MAX_ATTEMPTS) {
       log.step(attempt, MAX_ATTEMPTS, "Verifying with hub...");
       
-      // Check token budget before submitting
+      // Check token budget before submitting (use more conservative estimate)
       const budgetCheck = isWithinBudget(compressedLogs);
-      if (!budgetCheck.withinBudget) {
-        log.error("Token budget exceeded", `${budgetCheck.tokens} tokens (limit: ${budgetCheck.maxTokens})`);
+      // Add 30% safety margin since hub counts higher than our estimate
+      const effectiveTokens = Math.ceil(budgetCheck.tokens * 1.3);
+      const exceedsBudget = effectiveTokens > budgetCheck.maxTokens;
+      
+      if (exceedsBudget) {
+        log.error("Token budget exceeded (with safety margin)", `${effectiveTokens} estimated tokens (limit: ${budgetCheck.maxTokens})`);
         log.warning("Need to compress further...");
         
-        // Try to compress more aggressively
-        compressedLogs = await compressLogs(compressedLogs, missingComponents);
+        // Re-compress from original critical logs, not from already compressed
+        compressedLogs = await compressLogs(criticalLogs, missingComponents);
         log.info(formatBudgetStatus(compressedLogs));
         continue;
       }

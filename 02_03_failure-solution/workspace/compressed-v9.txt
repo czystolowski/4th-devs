@@ -1,0 +1,43 @@
+2026-04-29 06:02:28 [WARN] STMTURB12: pressure jitter above baseline, damping engaged  
+2026-04-29 06:03:20 [WARN] ECCS8: thermal drift exceeds threshold, corrective ramp queued  
+2026-04-29 06:04:13 [CRIT] ECCS8: runaway temp, reactor trip  
+2026-04-29 06:04:39 [WARN] WTANK07: fill trajectory slower than expected, cooling reserve may constrain  
+2026-04-29 06:11:40 [WARN] PWR01: input ripple crossed limits, stability window narrowed  
+2026-04-29 06:16:56 [CRIT] WSTPOOL2: absorption path at emergency boundary, heat rejection insufficient  
+2026-04-29 06:30:05 [WARN] ECCS8: rising return temp, cooling headroom decreasing  
+2026-04-29 06:30:58 [WARN] WSTPOOL2: waste heat relay approaching cap, tuning required  
+2026-04-29 06:35:21 [ERRO] PWR01: transient disturbed pump control, recovery completed but degraded  
+2026-04-29 06:36:40 [ERRO] WTANK07: unstable refill trend, coolant inventory not guaranteed  
+2026-04-29 06:37:33 [ERRO] STMTURB12: feedback loop exceeded budget, thermal conversion reduced  
+2026-04-29 06:52:54 [WARN] WTANK07: level sensor mismatch, secondary read requested  
+2026-04-29 08:00:26 [CRIT] ECCS8: core cooling unsafe, immediate actions required  
+2026-04-29 08:06:34 [ERRO] WSTPOOL2: heat transfer path saturated, lag accumulating  
+2026-04-29 08:28:56 [ERRO] ECCS8: cooling efficiency dropped, commands did not recover  
+2026-04-29 08:36:50 [ERRO] WTANK07: level estimate near minimum, refill request timed out  
+2026-04-29 09:06:13 [ERRO] ECCS8: return circuit temp rose faster than prediction, emergency bias armed  
+2026-04-29 10:15:56 [CRIT] WTANK07: coolant level below critical, hard trip stage initiated  
+2026-04-29 12:49:52 [WARN] WTANK07: advisory threshold crossed, control loop reduced tolerance  
+2026-04-29 12:56:27 [CRIT] STMTURB12: decoupling forced by thermal risk, energy conversion terminated  
+2026-04-29 13:37:40 [CRIT] PWR01: unable to sustain stable feed, critical loads shedding  
+2026-04-29 13:48:12 [WARN] PWR01: stability unstable under startup load, additional source recommended  
+2026-04-29 15:47:55 [WARN] WSTPOOL2: moderate drift during initialization, correction active  
+2026-04-29 16:06:47 [CRIT] WSTPOOL2: critical protection state during startup, shutdown safeguards active  
+2026-04-29 17:17:23 [ERRO] PWR01: recovery step failed, subsystem in degraded mode  
+2026-04-29 18:00:22 [WARN] WTANK07: trend outside startup envelope, monitoring increased  
+2026-04-29 18:06:04 [WARN] WTANK07: cooling reserve trend falling, ECCS8 nearing limit  
+2026-04-29 18:08:15 [ERRO] ECCS8: fails to recover thermal margin, shutdown criteria nearing  
+2026-04-29 18:27:33 [ERRO] ECCS8: operational fault after retry, performance constraints enforced  
+2026-04-29 18:46:51 [WARN] ECCS8: moderate drift during initialization, correction active  
+2026-04-29 19:13:36 [WARN] WTANK07: preventive warning issued, escalation rules armed  
+2026-04-29 19:21:56 [ERRO] ECCS8: inconsistent feedback under load, fallback path applied  
+2026-04-29 19:46:56 [ERRO] WTANK07: coolant level below critical reserve, shutdown path enforced  
+2026-04-29 19:47:22 [ERRO] WTANK07: control response exceeded budget, recovery attempts limited  
+2026-04-29 19:54:49 [CRIT] ECCS8: cannot remove heat, reactor protection critical stop  
+2026-04-29 20:02:16 [ERRO] WTANK07: recovery step failed, subsystem in degraded mode  
+2026-04-29 20:05:21 [CRIT] ECCS8: critical boundary exceeded, reactor in protected mode  
+2026-04-29 20:14:33 [ERRO] WTANK07: operational fault after retry, performance constraints enforced  
+2026-04-29 20:32:06 [CRIT] WTANK07: coolant inventory critical, ECCS8 cannot guarantee heat removal, shutdown mandatory  
+2026-04-29 20:34:44 [ERRO] WTANK07: inconsistent feedback under load, fallback path applied  
+2026-04-29 20:59:17 [CRIT] WTANK07: insufficient cooling confirmed, shutdown sequence executed  
+2026-04-29 21:11:34 [ERRO] ECCS8: recovery step failed, subsystem in degraded mode  
+2026-04-29 21:37:00 [CRIT] WTANK07: final trip due to critical level, FIRMWARE confirms safe shutdown
