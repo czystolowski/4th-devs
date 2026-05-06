@@ -1,0 +1,69 @@
+/**
+ * Simple logger utility
+ */
+
+const colors = {
+  reset: "\x1b[0m",
+  bright: "\x1b[1m",
+  dim: "\x1b[2m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  magenta: "\x1b[35m",
+  cyan: "\x1b[36m"
+};
+
+const log = {
+  box: (title) => {
+    const lines = title.split("\n");
+    const maxLen = Math.max(...lines.map(l => l.length));
+    const border = "═".repeat(maxLen + 4);
+    
+    console.log(`\n${colors.cyan}╔${border}╗${colors.reset}`);
+    lines.forEach(line => {
+      const padding = " ".repeat(maxLen - line.length);
+      console.log(`${colors.cyan}║${colors.reset}  ${colors.bright}${line}${padding}${colors.reset}  ${colors.cyan}║${colors.reset}`);
+    });
+    console.log(`${colors.cyan}╚${border}╝${colors.reset}\n`);
+  },
+
+  start: (message) => {
+    console.log(`${colors.blue}▶${colors.reset} ${message}`);
+  },
+
+  success: (message) => {
+    console.log(`${colors.green}✓${colors.reset} ${message}`);
+  },
+
+  info: (message) => {
+    console.log(`${colors.dim}ℹ ${message}${colors.reset}`);
+  },
+
+  warning: (message) => {
+    console.log(`${colors.yellow}⚠${colors.reset} ${message}`);
+  },
+
+  error: (title, message) => {
+    console.log(`${colors.red}✗ ${title}${colors.reset}`);
+    if (message) {
+      console.log(`  ${colors.dim}${message}${colors.reset}`);
+    }
+  },
+
+  step: (current, total, message) => {
+    console.log(`${colors.magenta}[${current}/${total}]${colors.reset} ${message}`);
+  },
+
+  flag: (flag) => {
+    console.log(`\n${colors.green}${colors.bright}🚩 FLAG: ${flag}${colors.reset}\n`);
+  },
+
+  data: (label, value) => {
+    console.log(`${colors.cyan}${label}:${colors.reset} ${value}`);
+  }
+};
+
+export default log;
+
+// Made with Bob

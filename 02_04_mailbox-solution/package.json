@@ -1,0 +1,13 @@
+{
+  "name": "02_04_mailbox-solution",
+  "version": "1.0.0",
+  "description": "Mailbox search agent - finds information from email API",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": ["ai", "agent", "email"],
+  "author": "",
+  "license": "ISC"
+}
