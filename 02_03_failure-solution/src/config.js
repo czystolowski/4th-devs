@@ -21,7 +21,7 @@ export const compression = {
 };
 
 export const logLevels = {
-  critical: ["WARN", "ERRO", "CRIT"],
+  critical: ["CRIT"], // Only CRIT level for maximum compression
   all: ["INFO", "WARN", "ERRO", "CRIT"]
 };
 

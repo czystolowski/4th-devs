@@ -1,22 +1,16 @@
 /**
  * Failure Log Compression Solution
- *
- * Solves the log compression challenge by:
- * 1. Downloading large log file from hub
- * 2. Filtering only critical events (WARN, ERRO, CRIT)
- * 3. Compressing logs using AI while preserving key information
- * 4. Iteratively improving based on hub feedback
- * 5. Submitting until flag is received
+ * 
+ * Main orchestration - handles all data processing:
+ * - Download, filter, deduplicate, format
+ * - Token counting and verification
+ * - Iterative improvement loop
+ * 
+ * Agent only handles: compression logic
  */
 
-import { fetchLogFile, verifyLogs, formatBudgetStatus, isWithinBudget } from "./src/helpers/hub.js";
-import { 
-  filterCriticalLogs, 
-  identifyComponents, 
-  compressLogs, 
-  analyzeFeedback,
-  improveCompression 
-} from "./src/agent.js";
+import { fetchLogFile, verifyLogs, countTokens } from "./src/helpers/hub.js";
+import { compressLogs } from "./src/agent.js";
 import log from "./src/helpers/logger.js";
 import { writeFile } from "fs/promises";
 import { join } from "path";
@@ -35,134 +29,183 @@ const saveToWorkspace = async (filename, content) => {
   return filepath;
 };
 
+/**
+ * Filter logs to only CRIT level
+ */
+const filterCriticalLogs = (logText) => {
+  const lines = logText.split("\n");
+  return lines.filter(line => {
+    const trimmed = line.trim();
+    return trimmed && trimmed.includes("[CRIT]");
+  }).join("\n");
+};
+
+/**
+ * Remove duplicate log entries
+ */
+const removeDuplicates = (logText) => {
+  const lines = logText.split("\n").filter(l => l.trim());
+  const seen = new Set();
+  const unique = [];
+  
+  for (const line of lines) {
+    // Normalize for comparison (remove timestamp variations)
+    const normalized = line.replace(/\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/, "TIME");
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      unique.push(line);
+    }
+  }
+  
+  return unique.join("\n");
+};
+
+/**
+ * Format logs consistently
+ */
+const formatLogs = (logText) => {
+  const lines = logText.split("\n").filter(l => l.trim());
+  return lines.map(line => {
+    // Ensure consistent format: [timestamp] [LEVEL] message
+    const match = line.match(/\[?(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\]?\s+\[(\w+)\]\s+(.+)/);
+    if (match) {
+      return `[${match[1]}] [${match[2]}] ${match[3]}`;
+    }
+    return line;
+  }).join("\n");
+};
+
+/**
+ * Check if within token budget
+ */
+const checkBudget = (text, maxTokens = 1500) => {
+  const tokens = countTokens(text);
+  const withinBudget = tokens <= maxTokens;
+  return {
+    tokens,
+    withinBudget,
+    maxTokens,
+    remaining: maxTokens - tokens
+  };
+};
+
 const main = async () => {
-  log.box("Failure Log Compression\nAI-Powered Log Analysis\nIterative Solving");
+  log.box("Failure Log Compression\nRule-Based Processing\nAI Compression");
   
   const apiKey = getApiKey();
+  const MAX_ATTEMPTS = 10;
   
   try {
-    // Step 1: Download log file
+    // Step 1: Download
     log.start("Downloading failure logs from hub...");
     const rawLogs = await fetchLogFile(apiKey);
     log.success(`Downloaded ${rawLogs.length} characters`);
-    
     await saveToWorkspace("raw-logs.txt", rawLogs);
-    log.info("Saved: workspace/raw-logs.txt");
     console.log("");
     
-    // Step 2: Filter critical logs
-    log.start("Filtering critical events (WARN, ERRO, CRIT)...");
-    const criticalLogs = filterCriticalLogs(rawLogs);
-    const criticalLines = criticalLogs.split("\n").filter(l => l.trim()).length;
-    log.success(`Filtered to ${criticalLines} critical log entries`);
+    // Step 2: Filter to CRIT only
+    log.start("Filtering to CRIT level only...");
+    let processedLogs = filterCriticalLogs(rawLogs);
+    const critCount = processedLogs.split("\n").filter(l => l.trim()).length;
+    log.success(`Filtered to ${critCount} CRIT entries`);
     
-    await saveToWorkspace("critical-logs.txt", criticalLogs);
-    log.info("Saved: workspace/critical-logs.txt");
+    // Step 3: Remove duplicates
+    log.start("Removing duplicates...");
+    processedLogs = removeDuplicates(processedLogs);
+    const uniqueCount = processedLogs.split("\n").filter(l => l.trim()).length;
+    log.success(`${uniqueCount} unique entries (removed ${critCount - uniqueCount} duplicates)`);
     
-    // Identify components
-    const components = identifyComponents(criticalLogs);
-    log.info(`Components found: ${components.join(", ")}`);
+    // Step 4: Format consistently
+    processedLogs = formatLogs(processedLogs);
+    await saveToWorkspace("processed-logs.txt", processedLogs);
+    log.info("Saved: workspace/processed-logs.txt");
+    
+    // Check initial token count
+    const initialBudget = checkBudget(processedLogs);
+    log.info(`Initial: ${initialBudget.tokens}/${initialBudget.maxTokens} tokens`);
     console.log("");
     
-    // Step 3: Initial compression
-    log.start("Compressing logs with AI...");
-    let compressedLogs = await compressLogs(criticalLogs);
-    log.success("Initial compression complete");
-    log.info(formatBudgetStatus(compressedLogs));
+    // Step 5: Compress with AI if needed
+    let compressedLogs = processedLogs;
     
-    await saveToWorkspace("compressed-v1.txt", compressedLogs);
-    log.info("Saved: workspace/compressed-v1.txt");
-    console.log("");
+    if (!initialBudget.withinBudget) {
+      log.start("Compressing with AI...");
+      compressedLogs = await compressLogs(processedLogs);
+      log.success("Compression complete");
+      
+      const compressedBudget = checkBudget(compressedLogs);
+      log.info(`Compressed: ${compressedBudget.tokens}/${compressedBudget.maxTokens} tokens`);
+      
+      await saveToWorkspace("compressed-v1.txt", compressedLogs);
+      console.log("");
+    }
     
-    // Step 4: Iterative verification and improvement
-    const MAX_ATTEMPTS = 10;
+    // Step 6: Verify with hub
     let attempt = 1;
-    let missingComponents = [];
-    
     while (attempt <= MAX_ATTEMPTS) {
       log.step(attempt, MAX_ATTEMPTS, "Verifying with hub...");
       
-      // Check token budget before submitting (use more conservative estimate)
-      const budgetCheck = isWithinBudget(compressedLogs);
-      // Add 30% safety margin since hub counts higher than our estimate
-      const effectiveTokens = Math.ceil(budgetCheck.tokens * 1.3);
-      const exceedsBudget = effectiveTokens > budgetCheck.maxTokens;
+      const budget = checkBudget(compressedLogs);
       
-      if (exceedsBudget) {
-        log.error("Token budget exceeded (with safety margin)", `${effectiveTokens} estimated tokens (limit: ${budgetCheck.maxTokens})`);
-        log.warning("Need to compress further...");
-        
-        // Re-compress from original critical logs, not from already compressed
-        compressedLogs = await compressLogs(criticalLogs, missingComponents);
-        log.info(formatBudgetStatus(compressedLogs));
-        continue;
+      if (!budget.withinBudget) {
+        log.error("Still over budget", `${budget.tokens}/${budget.maxTokens} tokens`);
+        log.warning("Need manual compression - check workspace/compressed-v1.txt");
+        break;
       }
       
       try {
         const result = await verifyLogs(apiKey, compressedLogs);
         
-        if (result.flag) {
-          log.flag(result.flag);
-          console.log("\n✓ Challenge solved successfully!");
+        // Check for flag in result.flag or in result.message
+        const flagMatch = result.flag || (result.message && result.message.match(/\{FLG:([^}]+)\}/));
+        const flag = result.flag || (flagMatch ? flagMatch[0] : null);
+        
+        if (flag) {
+          log.flag(flag);
+          console.log("\n✓ Challenge solved!");
           
-          await saveToWorkspace("final-compressed.txt", compressedLogs);
-          log.info("Saved: workspace/final-compressed.txt");
-          
+          await saveToWorkspace("final-solution.txt", compressedLogs);
           await saveToWorkspace("solution-metadata.json", JSON.stringify({
             attempts: attempt,
-            finalTokens: budgetCheck.tokens,
-            maxTokens: budgetCheck.maxTokens,
-            flag: result.flag,
-            components: components
+            finalTokens: budget.tokens,
+            flag: result.flag
           }, null, 2));
           
           break;
         }
         
-        // Analyze feedback
+        // Show feedback
         const feedback = result.message || JSON.stringify(result);
         log.warning("Verification failed");
         console.log(`Feedback: ${feedback}\n`);
         
-        // Look for missing components in feedback
-        missingComponents = analyzeFeedback(feedback);
-        if (missingComponents.length > 0) {
-          log.info(`Missing components detected: ${missingComponents.join(", ")}`);
+        // If hub says token budget exceeded, try compressing more
+        if (feedback.includes("token") || feedback.includes("context window")) {
+          log.start("Re-compressing based on feedback...");
+          compressedLogs = await compressLogs(processedLogs, feedback);
+          log.success("Re-compressed");
+          
+          const newBudget = checkBudget(compressedLogs);
+          log.info(`New: ${newBudget.tokens}/${newBudget.maxTokens} tokens`);
+          
+          await saveToWorkspace(`compressed-v${attempt + 1}.txt`, compressedLogs);
+          console.log("");
         }
-        
-        // Improve compression based on feedback
-        log.start("Improving compression based on feedback...");
-        compressedLogs = await improveCompression(criticalLogs, compressedLogs, feedback, missingComponents);
-        log.success("Compression improved");
-        log.info(formatBudgetStatus(compressedLogs));
-        
-        await saveToWorkspace(`compressed-v${attempt + 1}.txt`, compressedLogs);
-        log.info(`Saved: workspace/compressed-v${attempt + 1}.txt`);
-        console.log("");
         
         attempt++;
         
         if (attempt > MAX_ATTEMPTS) {
-          log.error("Max attempts reached", "Could not solve challenge");
+          log.error("Max attempts reached");
           break;
         }
         
       } catch (error) {
         log.error("Verification error", error.message);
-        
-        // If it's a token budget error from hub, compress more
-        if (error.message.includes("token") || error.message.includes("too long")) {
-          log.warning("Hub rejected due to length - compressing further...");
-          compressedLogs = await compressLogs(compressedLogs, missingComponents);
-          log.info(formatBudgetStatus(compressedLogs));
-          continue;
-        }
-        
         throw error;
       }
     }
     
-    console.log("\n📁 Results saved to: workspace/");
+    console.log("\n📁 Results in: workspace/");
     
   } catch (error) {
     log.error("Error", error.message);
@@ -175,4 +218,3 @@ main().catch((err) => {
   log.error("Startup error", err.message);
   process.exit(1);
 });
-
