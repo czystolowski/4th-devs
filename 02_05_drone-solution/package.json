@@ -1,0 +1,13 @@
+{
+  "name": "02_05_drone-solution",
+  "version": "1.0.0",
+  "description": "Drone control solution - bomb the dam to get water for cooling",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": ["ai", "agent", "drone", "vision"],
+  "author": "",
+  "license": "ISC"
+}

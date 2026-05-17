@@ -1,0 +1,8 @@
+{
+  "grid_columns": 3,
+  "grid_rows": 4,
+  "dam_column": 2,
+  "dam_row": 4,
+  "confidence": "high",
+  "notes": "The grid has 2 interior vertical dividing lines and 3 interior horizontal dividing lines, making 3 columns and 4 rows. The dam is the brightest saturated blue/cyan water feature, located at the bottom center of the image, clearly within column 2 and row 4."
+}
