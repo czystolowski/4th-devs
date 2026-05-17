@@ -12,7 +12,7 @@ const DAM_LOCATION_FILE = join(WORKSPACE_DIR, "dam-location.json");
 /**
  * Ensure workspace directory exists
  */
-const ensureWorkspace = async () => {
+export const ensureWorkspace = async () => {
   if (!existsSync(WORKSPACE_DIR)) {
     await mkdir(WORKSPACE_DIR, { recursive: true });
   }
@@ -66,4 +66,3 @@ export const shouldReanalyze = (feedback) => {
   return reanalyzeKeywords.some(keyword => feedbackLower.includes(keyword));
 };
 
-// Made with Bob

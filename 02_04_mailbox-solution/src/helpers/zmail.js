@@ -129,4 +129,3 @@ export const verifyAnswer = async (answer) => {
   return response.json();
 };
 
-// Made with Bob

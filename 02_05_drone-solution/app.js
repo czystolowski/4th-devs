@@ -11,19 +11,11 @@
 
 import { locateDam } from "./src/helpers/vision.js";
 import { getMapUrl, fetchDocumentation, submitInstructions } from "./src/helpers/hub.js";
-import { loadDamLocation, saveDamLocation, shouldReanalyze } from "./src/helpers/persistence.js";
-import { drone } from "./src/config.js";
+import { loadDamLocation, saveDamLocation, shouldReanalyze, ensureWorkspace } from "./src/helpers/persistence.js";
+import { drone, mission } from "./src/config.js";
 import log from "./src/helpers/logger.js";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
+import { writeFile } from "fs/promises";
 import { join } from "path";
-
-const ensureWorkspace = async () => {
-  const workspaceDir = join(process.cwd(), "workspace");
-  if (!existsSync(workspaceDir)) {
-    await mkdir(workspaceDir, { recursive: true });
-  }
-};
 
 const main = async () => {
   log.box("Drone Control Mission\nBomb the Dam\nSave the Power Plant");
@@ -96,10 +88,10 @@ const main = async () => {
     
     const instructions = [
       `set(engineON)`,  // Turn on engines
-      `set(100%)`,  // Set engine power to 100%
-      `setDestinationObject(PWR6132PL)`,  // Official target: power plant
+      `set(${drone.enginePower})`,  // Set engine power
+      `setDestinationObject(${drone.targetCode})`,  // Official target: power plant
       `set(${damLocation.dam_column},${damLocation.dam_row})`,  // Actual target: dam
-      `set(50m)`,  // Flight height: 50m to clear trees
+      `set(${drone.flightHeight})`,  // Flight height to clear trees
       `set(destroy)`,  // Mission: destroy target
       `set(return)`,  // Return to base after mission
       `flyToLocation`  // Execute mission
@@ -112,19 +104,21 @@ const main = async () => {
     console.log("");
     
     // Step 4: Submit to hub
-    const MAX_ATTEMPTS = 5;
     let attempt = 1;
     
-    while (attempt <= MAX_ATTEMPTS) {
-      log.step(attempt, MAX_ATTEMPTS, "Submitting instructions to hub...");
+    while (attempt <= mission.maxAttempts) {
+      log.step(attempt, mission.maxAttempts, "Submitting instructions to hub...");
       
       try {
         const result = await submitInstructions(instructions);
         
         // Check for flag
         if (result.flag || (result.message && result.message.includes("{FLG:"))) {
-          const flag = result.flag || result.message.match(/\{FLG:[^}]+\}/)[0];
-          log.flag(flag);
+          const flagMatch = result.message?.match(/\{FLG:[^}]+\}/);
+          const flag = result.flag || (flagMatch ? flagMatch[0] : null);
+          if (flag) {
+            log.flag(flag);
+          }
           console.log("✓ Mission accomplished! Dam destroyed, water flowing to cooling system!");
           return;
         }
@@ -160,7 +154,7 @@ const main = async () => {
       }
     }
     
-    if (attempt > MAX_ATTEMPTS) {
+    if (attempt > mission.maxAttempts) {
       log.error("Max attempts reached", "Review documentation and adjust instructions");
     }
     
@@ -176,4 +170,3 @@ main().catch((err) => {
   process.exit(1);
 });
 
-// Made with Bob

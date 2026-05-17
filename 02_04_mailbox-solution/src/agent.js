@@ -279,4 +279,3 @@ Be thorough and check multiple emails if needed.`;
   return { completed: false, finalMessage: "Max iterations reached" };
 };
 
-// Made with Bob

@@ -69,4 +69,3 @@ export const submitInstructions = async (instructions) => {
   return response.json();
 };
 
-// Made with Bob

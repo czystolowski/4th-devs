@@ -97,9 +97,9 @@ Return ONLY a JSON object in this exact format:
     }
   } catch (e) {
     console.error("Failed to parse vision response:", e);
+    return { raw: result, parseError: true };
   }
   
-  return { raw: result };
+  return { raw: result, parseError: false };
 };
 
-// Made with Bob

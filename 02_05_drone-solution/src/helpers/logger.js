@@ -66,4 +66,3 @@ const log = {
 
 export default log;
 
-// Made with Bob
