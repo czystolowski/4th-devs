@@ -1,0 +1,14 @@
+{
+  "name": "02_05_drone-agentic",
+  "version": "1.0.0",
+  "description": "Fully autonomous multi-agent system for drone control",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "keywords": ["ai", "agents", "multi-agent", "autonomous", "drone"],
+  "author": "",
+  "license": "ISC"
+}
