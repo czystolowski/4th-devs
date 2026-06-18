@@ -64,6 +64,7 @@ class Memory {
   /**
    * Persist memory to disk
    * @private
+   * @returns {boolean} True if all files persisted successfully
    */
   _persist() {
     const files = {
@@ -73,13 +74,16 @@ class Memory {
       compressionHistory: join(this.persistPath, "compression-history.json")
     };
 
+    let allSuccess = true;
     for (const [type, file] of Object.entries(files)) {
       try {
         writeFileSync(file, JSON.stringify(this[type], null, 2), "utf-8");
       } catch (error) {
         log.error(`Failed to persist ${type} memory`, error.message);
+        allSuccess = false;
       }
     }
+    return allSuccess;
   }
 
   /**
@@ -166,7 +170,7 @@ class Memory {
    * @returns {Array} Matching episodes
    */
   recallEpisodes(query = {}) {
-    let results = [...this.episodic];
+    let results = this.episodic;
 
     if (query.agent) {
       results = results.filter(ep => ep.agent === query.agent);
@@ -192,7 +196,7 @@ class Memory {
    * @returns {Array} Matching facts
    */
   recallFacts(query = {}) {
-    let results = [...this.semantic];
+    let results = this.semantic;
 
     if (query.fact) {
       const searchTerm = query.fact.toLowerCase();
@@ -218,7 +222,7 @@ class Memory {
    * @returns {Array} Matching procedures
    */
   recallProcedures(query = {}) {
-    let results = [...this.procedural];
+    let results = this.procedural;
 
     if (query.procedure) {
       const searchTerm = query.procedure.toLowerCase();

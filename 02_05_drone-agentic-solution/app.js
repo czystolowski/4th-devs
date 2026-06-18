@@ -30,6 +30,9 @@ const getApiKey = () => {
 const main = async () => {
   log.box("Agentic Drone Control System\nMulti-Agent Architecture\nAutonomous Mission Execution");
   
+  // Declare memory at function scope for error handler access
+  let memory;
+  
   try {
     // Verify API key
     const apiKey = getApiKey();
@@ -38,7 +41,7 @@ const main = async () => {
     
     // Step 1: Initialize memory system
     log.start("Initializing memory system...");
-    const memory = new Memory();
+    memory = new Memory();
     const memStats = memory.getStats();
     log.success(`Memory initialized (${memStats.episodic} episodes, ${memStats.semantic} facts, ${memStats.procedural} procedures)`);
     console.log("");
@@ -62,37 +65,38 @@ const main = async () => {
     console.log("");
     
     // Step 4: Check for mission completion
-    if (result.success) {
+    if (result?.success) {
       log.success("Mission completed successfully!");
       
-      // Check for FLAG in result
-      if (result.flag) {
-        log.flag(result.flag);
-      } else if (result.message && result.message.includes("{FLG:")) {
-        const flagMatch = result.message.match(/\{FLG:[^}]+\}/);
+      // Check for FLAG in result - handle both {FLG: and {{FLG: patterns
+      const resultData = result.result || result;
+      if (resultData.flag) {
+        log.flag(resultData.flag);
+      } else if (resultData.message?.includes("{FLG:")) {
+        const flagMatch = resultData.message.match(/\{FLG:[^}]+\}/);
         if (flagMatch) {
           log.flag(flagMatch[0]);
         }
       }
       
       // Display result details
-      if (result.message) {
+      if (resultData.message) {
         console.log("");
         log.info("Result message:");
-        console.log(result.message);
+        console.log(resultData.message);
       }
       
-      if (result.instructions) {
+      if (resultData.instructions) {
         console.log("");
         log.info("Final instructions:");
-        result.instructions.forEach((inst, i) => {
+        resultData.instructions.forEach((inst, i) => {
           console.log(`  ${i + 1}. ${inst}`);
         });
       }
       
     } else {
-      log.error("Mission failed", result.error || "Unknown error");
-      if (result.message) {
+      log.error("Mission failed", result?.error || "Unknown error");
+      if (result?.message) {
         console.log("");
         log.info("Details:");
         console.log(result.message);
@@ -111,8 +115,12 @@ const main = async () => {
     log.data("Total attempts", result.attempts || 0);
     
     // Save final memory state
-    memory._persist();
-    log.info("Memory state saved to workspace/memory/");
+    const saved = memory._persist();
+    if (!saved) {
+      log.warning("Some memory files failed to persist");
+    } else {
+      log.info("Memory state saved to workspace/memory/");
+    }
     
     console.log("");
     log.success("System shutdown complete");
@@ -123,11 +131,17 @@ const main = async () => {
     console.error(error);
     
     // Try to save memory state even on error
-    try {
-      memory._persist();
-      log.info("Memory state saved despite error");
-    } catch (saveError) {
-      log.warning("Could not save memory state");
+    if (memory) {
+      try {
+        const saved = memory._persist();
+        if (saved) {
+          log.info("Memory state saved despite error");
+        } else {
+          log.warning("Memory state partially saved despite error");
+        }
+      } catch (saveError) {
+        log.warning("Could not save memory state");
+      }
     }
     
     process.exit(1);

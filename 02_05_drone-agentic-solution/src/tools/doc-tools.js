@@ -7,6 +7,9 @@ import { createToolDefinition, toolRegistry } from "../core/tools.js";
 import { hub } from "../config.js";
 import log from "../helpers/logger.js";
 
+// Security: Maximum HTML content size to prevent ReDoS attacks
+const MAX_HTML_LENGTH = 1000000; // 1MB limit
+
 /**
  * Fetch HTML documentation from hub
  */
@@ -43,6 +46,11 @@ async function parseHtml(args, context) {
   
   if (!html) {
     throw new Error("HTML content is required");
+  }
+  
+  // Validate input length to prevent ReDoS attacks
+  if (html.length > MAX_HTML_LENGTH) {
+    throw new Error(`HTML content too large (${html.length} chars). Maximum allowed: ${MAX_HTML_LENGTH}`);
   }
   
   log.info(`Parsing HTML (${html.length} chars) for type: ${extractType}`);

@@ -22,7 +22,8 @@ export const agents = {
   coordinator: {
     name: "Coordinator",
     role: "Mission orchestrator and decision maker",
-    model: "gpt-4o"
+    model: "gpt-4o",
+    maxIterations: 50
   },
   vision: {
     name: "Vision Analyst",

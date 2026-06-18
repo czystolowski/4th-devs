@@ -4,6 +4,7 @@
  */
 
 import { createToolDefinition, toolRegistry } from "../core/tools.js";
+import { hub } from "../config.js";
 import log from "../helpers/logger.js";
 
 /**
@@ -53,7 +54,7 @@ async function buildSequence(args, context) {
   // Step 2: Destination object (if API catalog includes it)
   if (apiCatalog && apiCatalog.includes("setDestinationObject")) {
     steps.push({
-      instruction: `setDestinationObject(${requirements?.targetCode || "PWR6132PL"})`,
+      instruction: `setDestinationObject(${requirements?.targetCode || hub.targetCode})`,
       reasoning: "Set destination object ID"
     });
   }

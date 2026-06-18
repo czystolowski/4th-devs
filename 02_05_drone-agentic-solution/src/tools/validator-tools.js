@@ -46,7 +46,7 @@ async function submitInstructions(args, context) {
   const result = await response.json();
   
   // Check if we got the FLAG (success)
-  const hasFlag = result.message && result.message.includes("{{FLG:");
+  const hasFlag = result.message && result.message.includes("{FLG:";
   
   if (hasFlag) {
     log.success("FLAG OBTAINED! Mission successful!");

@@ -60,7 +60,7 @@ class CoordinatorAgent {
     
     // Start agent loop
     let iteration = 0;
-    const maxIterations = 50;
+    const maxIterations = this.config.maxIterations || 50;
     let finalResult = null;
     
     while (iteration < maxIterations && !this.missionState.complete) {
