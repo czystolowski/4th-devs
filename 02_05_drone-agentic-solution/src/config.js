@@ -53,4 +53,3 @@ export const memory = {
   persistPath: "workspace/memory"
 };
 
-// Made with Bob

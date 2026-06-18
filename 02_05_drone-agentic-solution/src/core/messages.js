@@ -398,4 +398,3 @@ export default {
   messageLogger
 };
 
-// Made with Bob

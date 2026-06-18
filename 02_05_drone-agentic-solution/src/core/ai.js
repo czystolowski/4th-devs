@@ -217,4 +217,3 @@ export default {
   formatToolResult
 };
 
-// Made with Bob

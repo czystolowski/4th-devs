@@ -340,4 +340,3 @@ export const toolRegistry = new ToolRegistry();
 
 export default ToolRegistry;
 
-// Made with Bob

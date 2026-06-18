@@ -1,0 +1,13 @@
+{
+  "name": "03_01_evaluation-solution",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Sensor anomaly detection with optimized LLM usage",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": ["sensors", "evaluation", "anomaly-detection"],
+  "author": "",
+  "license": "ISC"
+}
