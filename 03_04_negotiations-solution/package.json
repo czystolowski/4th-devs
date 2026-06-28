@@ -1,0 +1,18 @@
+{
+  "name": "03_04_negotiations-solution",
+  "version": "1.0.0",
+  "description": "Negotiations tool: item search API for wind turbine parts",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
