@@ -400,4 +400,3 @@ log.info("Documentation agent tools registered");
 
 export { fetchDocumentation, parseHtml, extractFunctions, understandParameters };
 
-// Made with Bob

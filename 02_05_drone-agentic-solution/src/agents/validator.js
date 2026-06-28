@@ -327,4 +327,3 @@ export const validatorAgent = new ValidatorAgent();
 
 export default ValidatorAgent;
 
-// Made with Bob

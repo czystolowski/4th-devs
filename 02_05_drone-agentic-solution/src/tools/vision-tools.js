@@ -459,4 +459,3 @@ log.info("Vision agent tools registered");
 
 export { analyzeMap, locateFeature, countGrid, verifyLocation };
 
-// Made with Bob

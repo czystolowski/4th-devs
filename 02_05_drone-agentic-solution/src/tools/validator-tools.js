@@ -467,4 +467,3 @@ log.info("Validator agent tools registered");
 
 export { submitInstructions, parseError, identifyIssue, suggestFix };
 
-// Made with Bob

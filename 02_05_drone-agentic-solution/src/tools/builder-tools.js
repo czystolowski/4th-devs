@@ -460,4 +460,3 @@ log.info("Builder agent tools registered");
 
 export { buildSequence, addInstruction, validateFormat, reorderInstructions };
 
-// Made with Bob

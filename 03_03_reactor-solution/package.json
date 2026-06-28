@@ -1,0 +1,13 @@
+{
+  "name": "03_03_reactor-solution",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Reactor robot navigation task - S03E03",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
