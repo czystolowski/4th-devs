@@ -1,0 +1,14 @@
+{
+  "name": "04_01_okoeditor-solution",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "OKO Editor — cover up the Skolwin rocket incident by editing the OKO monitoring system via the hub API (S04E01)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "keywords": ["agent", "api", "web-scraping", "incident-editor"],
+  "author": "",
+  "license": "ISC"
+}
