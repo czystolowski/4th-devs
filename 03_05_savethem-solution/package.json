@@ -1,0 +1,14 @@
+{
+  "name": "03_05_savethem-solution",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "SaveThem route planner — finds the optimal path to Skolwin using toolsearch discovery (S03E05)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "keywords": ["pathfinding", "agent", "route-planning"],
+  "author": "",
+  "license": "ISC"
+}
