@@ -1,0 +1,7 @@
+{
+  "name": "04_04_filesystem-solution",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js"
+  }
+}
