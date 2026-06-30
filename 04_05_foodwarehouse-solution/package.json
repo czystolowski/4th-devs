@@ -1,0 +1,7 @@
+{
+  "name": "04_05_foodwarehouse-solution",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js"
+  }
+}
