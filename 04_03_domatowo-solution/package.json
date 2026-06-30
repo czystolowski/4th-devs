@@ -1,0 +1,13 @@
+{
+  "name": "04_03_domatowo-solution",
+  "version": "1.0.0",
+  "description": "S04E03 — Domatowo rescue mission: search ruined city for a partisan and call helicopter evac",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
