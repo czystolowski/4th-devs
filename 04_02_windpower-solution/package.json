@@ -1,0 +1,14 @@
+{
+  "name": "04_02_windpower-solution",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Wind turbine scheduler — S04E02: program the turbine schedule to survive storms and produce required power",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "keywords": ["agent", "api", "async", "wind-turbine", "scheduler"],
+  "author": "",
+  "license": "ISC"
+}
