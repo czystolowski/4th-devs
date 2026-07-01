@@ -1,0 +1,14 @@
+{
+  "name": "05_01_radiomonitoring-solution",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Radio Monitoring — intercept and analyse radio signals to locate the hidden city 'Syjon' (S05E01)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "keywords": ["agent", "radio", "pipeline", "binary", "base64", "routing"],
+  "author": "",
+  "license": "ISC"
+}

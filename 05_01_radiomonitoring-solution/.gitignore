@@ -1,0 +1,7 @@
+# runtime artefacts
+debug_files/
+signals_dump.json
+
+# one-shot helper scripts (created during investigation, not part of the solution)
+debug*.js
+transmit.js
